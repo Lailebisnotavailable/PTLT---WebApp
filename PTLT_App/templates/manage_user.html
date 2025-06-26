@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account Management</title>
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <div>
+        <span><strong>Admin</strong></span> |
+        <a href="#">Account Management</a> |
+        <a href="#">Class Management</a>
+
+        <input type="text" placeholder="Search Users">
+        <button>Logout</button>
+    </div>
+
+    <hr>
+
+    <!-- Filter Bar -->
+    <div>
+        <label for="role">Role:</label>
+        <select id="role">
+            <option value="">Select</option>
+            <option value="professor">Professor</option>
+            <option value="student">Student</option>
+        </select>
+
+        <label for="status">Status:</label>
+        <select id="status">
+            <option value="">Select</option>
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+        </select>
+
+        <label for="course">Course/Year/Section:</label>
+        <select id="course">
+            <option value="">Select</option>
+            <option value="bsit3a">BSIT 3A</option>
+        </select>
+
+        <button>Sort</button>
+    </div>
+
+    <br>
+
+    <!-- Account Table -->
+    <table border="1" cellpadding="10" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    Name: <br>
+                    ID: 
+                </td>
+                <td>Professor</td>
+                <td>name@g.fetupcavite.edu.ph</td>
+                <td>Active</td>
+                <td>
+                    <a href="#">Edit</a> | 
+                    <a href="#">Delete</a>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Name: <br>
+                    Course/Year/Section:
+                </td>
+                <td>Student</td>
+                <td>name@g.fetupcavite.edu.ph</td>
+                <td>Pending</td>
+                <td>
+                    <a href="#">Edit</a> | 
+                    <a href="#">Delete</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <br>
+
+    <!-- Pagination and Results Info -->
+    <div>
+        Showing 1 results
+    </div>
+
+    <div>
+        <button>&lt;</button>
+        <button>1</button>
+        <button>&gt;</button>
+    </div>
+
+</body>
+</html>

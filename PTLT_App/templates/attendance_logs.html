@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Attendance Records</title>
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <div>
+        <span><strong>Professor Window</strong></span> |
+        <a href="#">Student Attendance Record</a> |
+        <a href="#">Schedule</a>
+
+        <button style="float: right;">Logout</button>
+    </div>
+
+    <hr>
+
+    <!-- Page Title -->
+    <h2>Student Attendance Records</h2>
+
+    <!-- Filter Section -->
+    <div>
+        <label for="subject">Subject & Course:</label>
+        <select id="subject">
+            <option value="course and subject">BET-COET</option>
+        </select>
+
+        <label for="date-range">Date Range:</label>
+        <select id="date-range">
+            <option value="2025-04-01_to_2025-04-08">April 1, 2025 - April 8, 2025</option>
+            <option value="2025-04-09_to_2025-04-16">April 9, 2025 - April 16, 2025</option>
+            <option value="2025-04-17_to_2025-04-24">April 17, 2025 - April 24, 2025</option>
+            <option value="2025-04-25_to_2025-05-02">April 25, 2025 - May 2, 2025</option>
+        </select>
+
+
+        <button>Sort</button>
+
+    </div>
+
+    <br>
+
+    <!-- Faculty Info -->
+    <div>
+        <strong>Faculty In-Charge Name</strong><br>
+        Department: DED
+    </div>
+
+    <br>
+
+    <!-- Attendance Table -->
+    <table border="1" cellpadding="8" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>Sex (M/F)</th>
+                <th>Subject</th>
+                <th>Course</th>
+                <th>Room</th>
+                <th>Date</th>
+                <th>Schedule </th>
+                <th>Time In</th>
+                <th>Time Out</th>
+                <th>Status</th>
+               
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>TUPC-03-XXX</td>
+                <td>-</td>
+                <td>-</td>
+                <td>BET</td>
+                <td>COET</td>
+                <td>Office Lab 1</td>
+                <td>2025-04-03</td>
+                <td>10:00 AM - 1:00 PM</td>
+                <td>10:00 AM</td>
+                <td>1:00 PM</td>
+                <td>Present</td>
+              
+            </tr>
+            <!-- Placeholder rows -->
+            <tr><td colspan="12">-</td></tr>
+            <tr><td colspan="12">-</td></tr>
+            <tr><td colspan="12">-</td></tr>
+        </tbody>
+    </table>
+
+    <br>
+
+    <!-- Pagination -->
+    <div>
+        Showing 1 results
+    </div>
+
+    <div>
+        <button>&lt;</button>
+        <button>1</button>
+        <button>&gt;</button>
+    </div>
+
+    <br>
+
+    <!-- Document Plotter -->
+    <div>
+        <button>Document Plotter</button>
+    </div>
+
+</body>
+</html>
