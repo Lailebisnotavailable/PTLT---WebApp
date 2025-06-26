@@ -13,5 +13,8 @@ def schedule(request):
 def account_management(request):
     return render(request, 'account_management.html')
 
+def class_management(request):
+    return render(request, 'class_management.html')
 
-
+def attendance_report_template(request):
+    return render(request, 'attendance_report_template.html')
