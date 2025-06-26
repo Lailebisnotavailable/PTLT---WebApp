@@ -4,11 +4,14 @@ from django.shortcuts import render
 def login(request):
     return render(request, 'login.html')
 
-def manage_user(request):
-    return render(request, 'manage_user.html')
+def student_attendance_records(request):
+    return render(request, 'student_attendance_records.html')
 
-def attendance_logs(request):
-    return render(request, 'attendance_logs.html')
+def schedule(request):
+    return render(request, 'schedule.html')
 
-def instructor_schedule(request):
-    return render(request, 'instructor_schedule.html')
+def account_management(request):
+    return render(request, 'account_management.html')
+
+
+
