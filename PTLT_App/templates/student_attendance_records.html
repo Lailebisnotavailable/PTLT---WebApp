@@ -16,15 +16,15 @@
 </head>
 <body>
 
-<div class="container py-4">
+<div class="container py-4 custom-min-width">
 
     <!-- Top Navigation Bar -->
     <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top position-relative">
-        <strong class="p-3 fs-5 ptlt">PTLT</strong>
-
+        
         <!-- Centered link container -->
-        <div class="position-absolute start-50 translate-middle-x d-flex cont_links">
-            <a href="http://127.0.0.1:8000/student_attendance_records" class="px-3 custom-link">Student Attendance Record</a>
+         <div class="d-flex cont_links align-items-center">
+            <strong class="p-3 fs-5 ptlt">PTLT</strong>
+            <a href="http://127.0.0.1:8000/student_attendance_records" class="px-3 custom-link">Student Attendance Records</a>
             <a href="http://127.0.0.1:8000/schedule" class="px-3 custom-link">Schedule</a>
         </div>
 
@@ -113,7 +113,7 @@
 
         <!-- Document Plotter -->
         <div class="text-end mt-4">
-            <button class="btn btn-success doc_plot" onclick="window.location.href='http://127.0.0.1:8000/attendance_report_template';">Document Plotter</button>
+            <button class="btn btn-success custom-btn" onclick="window.location.href='http://127.0.0.1:8000/attendance_report_template';">Document Plotter</button>
         </div>
 
     </div>
