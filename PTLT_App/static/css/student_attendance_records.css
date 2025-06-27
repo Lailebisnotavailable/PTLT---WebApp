@@ -3,12 +3,10 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.nav_top{
-  background-color: #661e1e;
-  border: none;
-  border-radius: 4px;
-   
+.ptlt {
+  color: #ffffff;
 }
+
 .nav_links {
   display: flex;
   padding: 1rem;
@@ -16,22 +14,70 @@ body {
 
 }
 
-.custom-link {
-  color: #ffffff; 
+.cont_links {
+  justify-content: center; /* Center horizontally */
+  align-items: center;     /* Center vertically */
 }
-.custom-link:hover {
-  background-color: #a85353;
-  color: #ffffff;
-  padding: 0.1rem;
+
+@media (max-width: 767px) {
+  .nav_top {
+    min-height: 100px;
+  }
+  .cont_links {
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+.nav_top {
+  position: relative;
+  background-color: #661e1e;
+  border: none;
   border-radius: 4px;
+  padding-bottom: 2px; 
+  overflow: hidden;
 }
+
+.custom-link {
+  position: relative; 
+  color: #fff;
+  text-decoration: none;
+  padding: 0.25rem 0;
+  transition: color 0.2s;
+  font-size: 1rem;
+  z-index: 1; 
+}
+
+.custom-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #ff7878;
+  bottom: -4px;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+  border-radius: 2px;
+  z-index: 0;
+}
+
+.custom-link:hover::after,
+.custom-link:focus::after {
+  transform: scaleX(1);
+}
+
+
+
+
 
 h2 {
   color: #343a40;
 }
 
 .logout_btn {
-  background-color: #772c2c;
+  background-color: #a74545;
   color: #ffffff;
   border: none;
   padding: 10px 20px;
@@ -39,6 +85,29 @@ h2 {
   cursor: pointer;
 }
 .logout_btn:hover {
-  background-color: #a85353;
+  background-color: #cc6565;
   color: #ffffff;
 }
+
+.doc_plot {
+  background-color: #a74545;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.doc_plot:hover {
+  background-color: #cc6565;
+  color: #ffffff;
+}
+
+
+
+
+
+
+
+
+
+
