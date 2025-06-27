@@ -1,0 +1,51 @@
+/* Reset and base styles */
+body {
+    background-color: #eceafd;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Login card */
+.login-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Header section */
+.login-header {
+    background-color: #4c3fd1;
+    color: white;
+    padding: 24px;
+    text-align: center;
+}
+
+/* Form labels */
+.form-label {
+    margin-top: 15px;
+    font-weight: 600;
+}
+
+/* Forgot password link */
+.forgot-password {
+    font-size: 13px;
+    text-align: right;
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    color: #4c3fd1;
+    text-decoration: none;
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
+}
+
+/* Login button */
+.btn-login {
+    background-color: #4c3fd1;
+    color: white;
+}
+
+.btn-login:hover {
+    background-color: #3c30a8;
+}
