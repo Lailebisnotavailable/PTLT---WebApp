@@ -22,8 +22,8 @@
     <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top">
         <div class="d-flex align-items-center nav_links">
             <strong class="border-end pe-3 me-3 fs-5">Professor Window</strong>
-            <a href="#" class="text-decoration-none border-end pe-3 me-3 custom-link">Student Attendance Record</a>
-            <a href="#" class="text-decoration-none custom-link">Schedule</a>
+            <a href="http://127.0.0.1:8000/student_attendance_records" class="text-decoration-none border-end pe-3 me-3 custom-link">Student Attendance Record</a>
+            <a href="http://127.0.0.1:8000/schedule" class="text-decoration-none custom-link">Schedule</a>
         </div>
 
         <button class="btn m-2 logout_btn">Logout</button>
@@ -110,7 +110,7 @@
 
         <!-- Document Plotter -->
         <div class="text-end mt-4">
-            <button class="btn btn-success">Document Plotter</button>
+            <button class="btn btn-success" onclick="window.location.href='http://127.0.0.1:8000/attendance_report_template';">Document Plotter</button>
         </div>
 
     </div>
