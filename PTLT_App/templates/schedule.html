@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -29,12 +31,14 @@
     </div>
 
     <hr>
-    <div class="container py-2 bg-white shadow rounded-4 p-4 py-4">
-        <!-- Schedule Overview Section -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>Schedule Overview</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+            
             <button class="btn btn-primary custom-btn">Export Schedule</button>
-        </div>
+    </div>
+    <!-- Mga under nito yung masasama sa pdf -->
+    <div id="schedule-overview" class="container py-2 bg-white shadow rounded-4 p-4 py-4">
+        <!-- Schedule Overview Section -->
+        <h2>Schedule Overview</h2>
 
         <!-- Schedule Table -->
         <div class="table-responsive">
@@ -166,10 +170,11 @@
                     <tr>
                         <th>Course Code</th>
                         <th>Course Name</th>
-                        <th>Schedule</th>
+                        <th>Time in</th>
+                        <th>Time Out</th>
                         <th>Room</th>
                         <th>Students</th>
-                        <th>Grace Period</th>
+                        <th>Grace Period (Minutes)</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -177,12 +182,16 @@
                     <tr>
                         <td>BET3</td>
                         <td>Technical Research</td>
-                        <td>1:00 - 4:00 PM</td>
-                        <td>OITC</td>
+                        <td class="timein">13:00</td>
+                        <td class="timeout">16:00</td>
+                        <td class="room">OITC</td>
                         <td>32</td>
-                        <td>15 minutes</td>
-                        <td><a href="#" class="custom-link">Edit</a></td>
+                        <td class="grace">15 </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary toggle-course-edit-btn">Edit</button>
+                        </td>
                     </tr>
+
                     <!-- Placeholder rows -->
                     <tr><td colspan="7">-</td></tr>
                     <tr><td colspan="7">-</td></tr>
@@ -192,5 +201,8 @@
     </div>
 
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> <!-- Para sa pdf saving -->
+<script src="{% static 'js/instructor_schedule.js' %}"></script>
+
 </body>
 </html>

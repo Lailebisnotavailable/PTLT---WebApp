@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,15 +43,16 @@
                     <input type="text" class="form-control" name="course_name">
                 </div>
                 
-                <div class="col-md-4">
+              <div class="col-md-4">
                     <label class="form-label">Time In:</label>
-                    <input type="time" class="form-control" name="time_in">
-                </div>
+                    <input type="time" class="form-control" id="time_in" name="time_in">
+              </div>
 
                 <div class="col-md-4">
                     <label class="form-label">Time Out:</label>
-                    <input type="time" class="form-control" name="time_out">
+                    <input type="time" class="form-control" id="time_out" name="time_out">
                 </div>
+
 
                 <div class="col-md-4">
                     <label class="form-label">Day:</label>
@@ -91,23 +93,22 @@
                     <tr>
                         <td>BET3</td>
                         <td>Technical Research</td>
-                        <td>Name</td>
-                        <td>1:00</td>
-                        <td>4:00PM</td>
-                        <td>Monday</td>
-                        <td>32 Students</td>
+                        <td class="professor">Prof. Santos</td>
+                        <td class="timein">13:00</td>
+                        <td class="timeout">16:00</td>
+                        <td class="day">Monday</td>
+                        <td>32</td>
                         <td>
-                            <a href="#" class="btn btn-sm btn-outline-primary me-1">Edit</a>
-                            <a href="#" class="btn btn-sm btn-outline-danger">Delete</a>
+                            <a href="#" class="btn btn-sm btn-outline-primary toggle-edit-btn">Edit</a>
+                            <a href="#" class="btn btn-sm btn-outline-danger delete-btn">Delete</a>
                         </td>
                     </tr>
-                    <tr><td colspan="6">-</td></tr>
-                    <tr><td colspan="6">-</td></tr>
                 </tbody>
+
             </table>
         </div>
     </div>
 </div>
-
+<script src="{% static 'js/class_management_edit_save.js' %}"></script>
 </body>
 </html>
