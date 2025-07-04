@@ -23,7 +23,8 @@
         <div class="d-flex align-items-center nav_links">
             <strong class="pe-3 me-3 fs-5 ptlt">PTLT</strong>
             <a href="http://127.0.0.1:8000/account_management" class="text-decoration-none pe-3 me-3 custom-link">Account Management</a>
-            <a href="http://127.0.0.1:8000/class_management" class="text-decoration-none custom-link">Class Management</a>
+            <a href="http://127.0.0.1:8000/class_management" class="text-decoration-none custom-link">Class Management </a>
+            <a href="http://127.0.0.1:8000/create_instructor" class="text-decoration-none custom-link">Create Instructor</a>
         </div>
         <div class="d-flex align-items-center gap-2">
             <input type="text" class="form-control form-control-sm" placeholder="Search Users" style="width: 200px;">
@@ -78,33 +79,24 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
+                {% for acc in accounts %}
+                    <tr data-id="{{ acc.id }}">
                         <td>
-                            <strong>Name:</strong> <br>
-                            <span>ID:</span>
+                            <strong contenteditable="false" class="editable first_name">{{ acc.first_name }} {{ acc.last_name }}</strong><br>
+                            <span>ID: <span class="editable user_id">{{ acc.user_id }}</span></span>
                         </td>
-                        <td>Professor</td>
-                        <td>name@gsfetupcavite.edu.ph</td>
+                        <td class="editable role" contenteditable="false">{{ acc.role }}</td>
+                        <td class="editable email" contenteditable="false">{{ acc.email }}</td>
                         <td><span class="badge bg-success">Active</span></td>
                         <td>
-                            <a href="#" class="btn btn-sm btn-outline-primary me-1">Edit</a>
-                            <a href="#" class="btn btn-sm btn-outline-danger">Delete</a>
+                            <button class="btn btn-sm btn-outline-primary me-1 edit-btn">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger delete-btn">Delete</button>
                         </td>
                     </tr>
-                    <tr>
-                        <td>
-                            <strong>Name:</strong> <br>
-                            <span>Course/Year/Section:</span>
-                        </td>
-                        <td>Student</td>
-                        <td>name@gsfetupcavite.edu.ph</td>
-                        <td><span class="badge bg-warning text-dark">Pending</span></td>
-                        <td>
-                            <a href="#" class="btn btn-sm btn-outline-primary me-1">Edit</a>
-                            <a href="#" class="btn btn-sm btn-outline-danger">Delete</a>
-                        </td>
-                    </tr>
+                {% endfor %}
                 </tbody>
+
+
             </table>
         </div>
 
@@ -120,6 +112,7 @@
 
     </div>
 </div>
-
+<form style="display:none;">{% csrf_token %}</form>
+<script src="{% static 'js/account_management_actions.js' %}"></script>
 </body>
 </html>

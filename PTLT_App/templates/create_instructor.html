@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Instructor Account</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/create_instructor.css' %}">
+</head>
+<body class="bg-light">
+        <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top">
+            <div class="d-flex align-items-center nav_links">
+                <strong class="pe-3 me-3 fs-5 ptlt">PTLT</strong>
+                <a href="http://127.0.0.1:8000/account_management" class="text-decoration-none pe-3 me-3 custom-link">Account Management</a>
+                <a href="http://127.0.0.1:8000/class_management" class="text-decoration-none custom-link">Class Management </a>
+                <a href="http://127.0.0.1:8000/create_instructor" class="text-decoration-none custom-link">Create Instructor</a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <input type="text" class="form-control form-control-sm" placeholder="Search Users" style="width: 200px;">
+                <button class="btn m-2 logout_btn">Logout</button>
+            </div>
+        </div>
+<div class="container my-5 p-4 rounded-4 shadow-sm bg-white instructor-form-container">
+    <h2 class="mb-4 text-center title">Create Instructor Account</h2>
+    {% if messages %}
+    <div class="alert-container mb-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST" id="createForm">
+        {% csrf_token %}
+        <div class="row g-4">
+            <div class="col-md-6">
+                <label for="user_id" class="form-label">User ID</label>
+                <input type="text" class="form-control" id="user_id" name="user_id" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="email" class="form-label">Email Address</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="first_name" class="form-label">First Name</label>
+                <input type="text" class="form-control" id="first_name" name="first_name" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="last_name" class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="last_name" name="last_name" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="sex" class="form-label">Sex</label>
+                <select class="form-select" id="sex" name="sex" required>
+                    <option value="" disabled selected>Select</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="role" class="form-label">Role</label>
+                <select class="form-select" id="role" name="role" required>
+                    <option value="Instructor" selected>Instructor</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <button type="button" class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#confirmModal">Create</button>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmModalLabel">Confirm Account Creation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to create this instructor account?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Yes, Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>
