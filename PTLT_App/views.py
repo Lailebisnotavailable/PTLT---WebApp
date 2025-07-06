@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_protect
+import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -63,19 +65,30 @@ def delete_account(request, account_id):
     return JsonResponse({'status': 'error'}, status=400)
 
 @csrf_exempt
-@require_POST
 def update_account(request, account_id):
-    acc = get_object_or_404(Account, id=account_id)
-    try:
-        data = json.loads(request.body)
-        acc.user_id = data.get('user_id', acc.user_id)
-        acc.email = data.get('email', acc.email)
-        acc.role = data.get('role', acc.role)
-        acc.save()
-        return JsonResponse({'status': 'success'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    print("1")
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            print("Received data:", data)  # 👈 Debug
+            
+            account = get_object_or_404(Account, id=account_id)
 
+            # Direct assignment from data
+            account.user_id = data.get('user_id', account.user_id)
+            account.first_name = data.get('first_name', account.first_name)
+            account.last_name = data.get('last_name', account.last_name)
+            account.role = data.get('role', account.role)
+            account.email = data.get('email', account.email)
+
+            account.save()
+
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            print("Error updating account:", str(e))
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    return JsonResponse({'status': 'invalid_request'})
 
 def class_management(request):
     return render(request, 'class_management.html')

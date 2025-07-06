@@ -44,7 +44,7 @@
                 <label for="role" class="form-label">Role:</label>
                 <select id="role" class="form-select">
                     <option value="">Select</option>
-                    <option value="professor">Professor</option>
+                    <option value="professor">Instructor</option>
                     <option value="student">Student</option>
                 </select>
             </div>
@@ -71,7 +71,9 @@
             <table class="table table-bordered align-middle text-center">
                 <thead class="table-light">
                     <tr>
-                        <th>Name</th>
+                        <th>User ID</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
                         <th>Role</th>
                         <th>Email</th>
                         <th>Status</th>
@@ -79,22 +81,22 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for acc in accounts %}
-                    <tr data-id="{{ acc.id }}">
-                        <td>
-                            <strong contenteditable="false" class="editable first_name">{{ acc.first_name }} {{ acc.last_name }}</strong><br>
-                            <span>ID: <span class="editable user_id">{{ acc.user_id }}</span></span>
-                        </td>
-                        <td class="editable role" contenteditable="false">{{ acc.role }}</td>
-                        <td class="editable email" contenteditable="false">{{ acc.email }}</td>
+                    {% for account in accounts %}
+                    <tr data-id="{{ account.id }}">
+                        <td class="editable user_id">{{ account.user_id }}</td>
+                        <td class="editable first_name">{{ account.first_name }}</td>
+                        <td class="editable last_name">{{ account.last_name }}</td>
+                        <td class="editable role">{{ account.role }}</td>
+                        <td class="editable email">{{ account.email }}</td>
                         <td><span class="badge bg-success">Active</span></td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary me-1 edit-btn">Edit</button>
                             <button class="btn btn-sm btn-outline-danger delete-btn">Delete</button>
                         </td>
                     </tr>
-                {% endfor %}
+                    {% endfor %}
                 </tbody>
+
 
 
             </table>
