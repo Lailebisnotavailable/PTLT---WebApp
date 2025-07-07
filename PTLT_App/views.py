@@ -12,34 +12,58 @@ def login(request):
 
 from django.contrib import messages
 
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Account, CourseSection
+
 def create_instructor(request):
     if request.method == 'POST':
-        user_id = request.POST.get('user_id')
-        email = request.POST.get('email')
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        role = request.POST.get('role')
-        password = request.POST.get('password')
-        sex = request.POST.get('sex')
+        form_type = request.POST.get('form_type')
 
-        if Account.objects.filter(user_id=user_id).exists():
-            messages.error(request, 'User ID already exists.')
-        elif Account.objects.filter(email=email).exists():
-            messages.error(request, 'Email already exists.')
-        else:
-            Account.objects.create(
-                user_id=user_id,
-                email=email,
-                first_name=first_name,
-                last_name=last_name,
-                role=role,
-                password=password,
-                sex=sex
-            )
-            messages.success(request, 'Instructor account created successfully!')
-            return redirect('create_instructor')
+        if form_type == 'instructor_form':
+            # Instructor form submitted
+            user_id = request.POST.get('user_id')
+            email = request.POST.get('email')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            role = request.POST.get('role')
+            password = request.POST.get('password')
+            sex = request.POST.get('sex')
+
+            if Account.objects.filter(user_id=user_id).exists():
+                messages.error(request, 'User ID already exists.')
+            elif Account.objects.filter(email=email).exists():
+                messages.error(request, 'Email already exists.')
+            else:
+                Account.objects.create(
+                    user_id=user_id,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name,
+                    role=role,
+                    password=password,
+                    sex=sex
+                )
+                messages.success(request, 'Instructor account created successfully!')
+                return redirect('create_instructor')
+
+        elif form_type == 'course_section_form':
+            # Course & section form submitted
+            course_name = request.POST.get('course_name')
+            section_name = request.POST.get('section_name')
+
+            try:
+                course_section = CourseSection.objects.create(
+                    course_name=course_name,
+                    section_name=section_name
+                )
+                messages.success(request, f'Course Section "{course_section.course_section}" created successfully!')
+                return redirect('create_instructor')
+            except Exception as e:
+                messages.error(request, f'Error: {str(e)}')
 
     return render(request, 'create_instructor.html')
+
 
 
 def forgot_password(request):
