@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // ✅ 1. Edit & Delete Setup
     const rows = document.querySelectorAll('tbody tr');
 
     rows.forEach(row => {
@@ -32,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(res => res.json())
                 .then(json => {
                     if (json.status === 'success' || json.status === 'no_changes') {
-                        // Lock the fields back
                         fields.forEach(field => {
                             field.contentEditable = "false";
                             if (field.classList.contains('role')) {
@@ -55,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
             } else {
-                // Switch to edit mode
                 fields.forEach(field => {
                     const original = field.textContent.trim();
                     field.setAttribute('data-original', original);
@@ -102,6 +101,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // ✅ 2. AJAX Search Functionality
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            const query = this.value;
+            console.log("Search typing detected:", query);
+
+            fetch(`/account_management/?search=${query}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.querySelector('tbody').innerHTML = data.html;
+            })
+            .catch(err => {
+                console.error('Search fetch error:', err);
+            });
+        });
+    }
 
     function cancelEdit(fields, editBtn) {
         fields.forEach(field => {

@@ -1,0 +1,14 @@
+{% for account in accounts %}
+<tr data-id="{{ account.id }}">
+    <td class="editable user_id">{{ account.user_id }}</td>
+    <td class="editable first_name">{{ account.first_name }}</td>
+    <td class="editable last_name">{{ account.last_name }}</td>
+    <td class="editable role">{{ account.role }}</td>
+    <td class="editable email">{{ account.email }}</td>
+    <td><span class="badge bg-success">Active</span></td>
+    <td>
+        <button class="btn btn-sm btn-outline-primary me-1 edit-btn">Edit</button>
+        <button class="btn btn-sm btn-outline-danger delete-btn">Delete</button>
+    </td>
+</tr>
+{% endfor %}

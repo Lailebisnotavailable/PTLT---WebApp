@@ -10,6 +10,8 @@ urlpatterns = [
     path('delete_account/<int:account_id>/', views.delete_account, name='delete_account'),
     path('update_account/<int:account_id>/', views.update_account, name='update_account'),
     path('class_management', views.class_management, name='class_management'),
+    path('update_class_schedule/<int:pk>/', views.update_class_schedule, name='update_class_schedule'),
+    path('delete_class_schedule/<int:pk>/', views.delete_class_schedule, name='delete_class_schedule'),
     path('attendance_report_template', views.attendance_report_template, name='attendance_report_template'),
     path('create_instructor', views.create_instructor, name='create_instructor'),
 ]

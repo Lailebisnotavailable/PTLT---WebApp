@@ -60,7 +60,7 @@ class FingerprintRegistration(models.Model):
 
 
 class ClassSchedule(models.Model):
-    professor = models.ForeignKey(Account, on_delete=models.CASCADE, limit_choices_to={'role': 'Instructor'}, verbose_name="Professor")
+    professor = models.ForeignKey(Account, on_delete=models.CASCADE, null= True, blank= True, limit_choices_to={'role': 'Instructor'}, verbose_name="Professor")
     course_title = models.CharField(max_length=255, verbose_name="Course Title")
     course_code = models.CharField(max_length=50, verbose_name="Course Code")
 
