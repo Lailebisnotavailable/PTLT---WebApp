@@ -20,21 +20,16 @@
 
     <!-- Top Navigation Bar -->
     <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top position-relative">
-        
-        <!-- Centered link container -->
-         <div class="d-flex cont_links align-items-center">
+        <div class="d-flex cont_links align-items-center">
             <strong class="p-3 fs-5 ptlt">PTLT</strong>
             <a href="http://127.0.0.1:8000/student_attendance_records" class="px-3 custom-link">Student Attendance Records</a>
             <a href="http://127.0.0.1:8000/schedule" class="px-3 custom-link">Schedule</a>
         </div>
-
         <button class="btn m-2 logout_btn">Logout</button>
     </div>
 
-
     <hr>
     <div class="container py-2 bg-white shadow rounded-4 p-4 py-4">
-        <!-- Page Title -->
         <h2 class="mb-4">Student Attendance Records</h2>
 
         <!-- Filter Section -->
@@ -65,38 +60,33 @@
 
         <!-- Attendance Table -->
         <div class="table-responsive">
-            <table class="table table-bordered align-middle text-center">
+            <table class="table table-bordered text-center align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>Student ID</th>
-                        <th>Name</th>
-                        <th>Sex (M/F)</th>
-                        <th>Subject</th>
-                        <th>Course</th>
-                        <th>Room</th>
-                        <th>Date</th>
-                        <th>Schedule</th>
-                        <th>Time In</th>
-                        <th>Time Out</th>
+                        <th rowspan="2">Student ID</th>
+                        <th rowspan="2">Name</th>
+                        <th rowspan="2">Sex (M/F)</th>
+                        <th rowspan="2">Subject</th>
+                        <th rowspan="2">Course</th>
+                        <th rowspan="2">Room</th>
+                        <th colspan="8">Date</th>
+                    </tr>
+                    <tr>
+                        <th class="date-th"></th>
+                        <th class="date-th"></th>
+                        <th class="date-th"></th>
+                        <th class="date-th"></th>
+                        <th class="date-th"></th>
+                        <th class="date-th"></th>
+                        <th class="date-th"></th>
+                        <th class="date-th"></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>TUPC-03-XXX</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>BET</td>
-                        <td>COET</td>
-                        <td>Office Lab 1</td>
-                        <td>2025-04-03</td>
-                        <td>10:00 AM - 1:00 PM</td>
-                        <td>10:00 AM</td>
-                        <td>1:00 PM</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
                     </tr>
-                    <!-- Placeholder rows -->
-                    <tr><td colspan="10">-</td></tr>
-                    <tr><td colspan="10">-</td></tr>
-                    <tr><td colspan="10">-</td></tr>
                 </tbody>
             </table>
         </div>
@@ -115,8 +105,50 @@
         <div class="text-end mt-4">
             <button class="btn btn-success custom-btn" onclick="window.location.href='http://127.0.0.1:8000/attendance_report_template';">Document Plotter</button>
         </div>
-
     </div>
+</div>
+
+<!-- JavaScript for date range update -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("date-range");
+    const thCells = document.querySelectorAll(".date-th");
+
+    function formatDateMMDD(date) {
+        const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+        const dd = date.getDate().toString().padStart(2, '0');
+        return `${mm}/${dd}`;
+    }
+
+    function getDateRange(startStr, endStr) {
+        const dates = [];
+        let current = new Date(startStr);
+        const end = new Date(endStr);
+
+        while (current <= end && dates.length < 8) {
+            dates.push(new Date(current));
+            current.setDate(current.getDate() + 1);
+        }
+
+        return dates;
+    }
+
+    select.addEventListener("change", function () {
+        const [startStr, endStr] = this.value.split("_to_");
+        const dateArray = getDateRange(startStr, endStr);
+
+        thCells.forEach((cell, index) => {
+            if (index < dateArray.length) {
+                cell.textContent = formatDateMMDD(dateArray[index]);
+            } else {
+                cell.textContent = "";
+            }
+        });
+    });
+
+    select.dispatchEvent(new Event("change"));
+});
+</script>
 
 </body>
 </html>

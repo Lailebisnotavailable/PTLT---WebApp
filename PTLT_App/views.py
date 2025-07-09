@@ -73,7 +73,6 @@ def create_instructor(request):
     return render(request, 'create_instructor.html')
 
 
-
 def forgot_password(request):
     return render(request, 'forgot_password.html')
 

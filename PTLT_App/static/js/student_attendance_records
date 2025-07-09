@@ -1,0 +1,39 @@
+document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("date-range");
+    const thCells = document.querySelectorAll(".date-th");
+
+    function formatDateMMDD(date) {
+        const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+        const dd = date.getDate().toString().padStart(2, '0');
+        return `${mm}/${dd}`;
+    }
+
+    function getDateRange(startStr, endStr) {
+        const dates = [];
+        let current = new Date(startStr);
+        const end = new Date(endStr);
+
+        while (current <= end && dates.length < 8) {
+            dates.push(new Date(current));
+            current.setDate(current.getDate() + 1);
+        }
+
+        return dates;
+    }
+
+    select.addEventListener("change", function () {
+        const [startStr, endStr] = this.value.split("_to_");
+        const dateArray = getDateRange(startStr, endStr);
+
+        thCells.forEach((cell, index) => {
+            if (index < dateArray.length) {
+                cell.textContent = formatDateMMDD(dateArray[index]);
+            } else {
+                cell.textContent = "";
+            }
+        });
+    });
+
+    select.dispatchEvent(new Event("change"));
+});
+
