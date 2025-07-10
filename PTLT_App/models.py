@@ -22,7 +22,13 @@ class Account(models.Model):
     role = models.CharField(max_length=50, choices=[('Admin', 'Admin'), ('Instructor', 'Instructor')], verbose_name="Role")
     password = models.CharField(max_length=255, verbose_name="Password")
     sex = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], verbose_name="Sex")
-    
+    status = models.CharField(
+        max_length=20,
+        choices=[('Active', 'Active'), ('Inactive', 'Inactive'), ('Pending', 'Pending')],
+        default='Pending',
+        verbose_name="Account Status"
+    )
+
     course_section = models.ForeignKey(CourseSection, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Course & Section")
 
     def __str__(self):

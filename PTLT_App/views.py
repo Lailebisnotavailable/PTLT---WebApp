@@ -83,17 +83,27 @@ def schedule(request):
     return render(request, 'schedule.html')
 
 def account_management(request):
+    role_filter = request.GET.get('role', '')
+    status_filter = request.GET.get('status', '')
     search_query = request.GET.get('search', '')
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        accounts = Account.objects.filter(
+    accounts = Account.objects.all()
+
+    if role_filter:
+        accounts = accounts.filter(role__iexact=role_filter)
+    if status_filter:
+        accounts = accounts.filter(status__iexact=status_filter)
+    if search_query:
+        accounts = accounts.filter(
             Q(first_name__icontains=search_query) | Q(last_name__icontains=search_query)
         )
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('partials/account_table_body.html', {'accounts': accounts})
         return JsonResponse({'html': html})
 
-    accounts = Account.objects.all()
     return render(request, 'account_management.html', {'accounts': accounts})
+
 
 
 @csrf_exempt

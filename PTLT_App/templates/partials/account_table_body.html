@@ -5,7 +5,17 @@
     <td class="editable last_name">{{ account.last_name }}</td>
     <td class="editable role">{{ account.role }}</td>
     <td class="editable email">{{ account.email }}</td>
-    <td><span class="badge bg-success">Active</span></td>
+    <td>
+        {% if account.status == "Active" %}
+            <span class="badge bg-success">Active</span>
+        {% elif account.status == "Pending" %}
+            <span class="badge bg-warning text-dark">Pending</span>
+        {% elif account.status == "Inactive" %}
+            <span class="badge bg-secondary">Inactive</span>
+        {% else %}
+            <span class="badge bg-light text-dark">{{ account.status }}</span>
+        {% endif %}
+    </td>
     <td>
         <button class="btn btn-sm btn-outline-primary me-1 edit-btn">Edit</button>
         <button class="btn btn-sm btn-outline-danger delete-btn">Delete</button>
