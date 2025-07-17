@@ -35,15 +35,16 @@
 <body class="p-4">
 
 <div class="container py-4 custom-min-width">
-    <!-- Header Buttons -->
-    <div class="d-flex justify-content-between mb-2 no-print">
-        <span><strong>Document Plotter</strong></span>
-        <div>
-            <button class="btn btn-sm btn-red me-2" onclick="exportToPDF()">Export</button>
-            <button class="btn btn-sm btn-red" onclick="window.print()">Print</button>
+    <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top">
+        <!-- Header Buttons -->
+        <div class="d-flex align-items-center nav_links no-print">
+            <strong class="pe-3 me-3 fs-5 ptlt">Document Plotter</strong>
         </div>
+            <div class="d-flex align-items-center">
+                <button class="btn btn-sm btn-red me-2" onclick="exportToPDF()">Export</button>
+                <button class="btn btn-sm btn-red me-2" onclick="window.print()">Print</button>
+            </div>
     </div>
-
     <!-- Document Content -->
     <div id="attendance-doc" class="border p-3">
         <!-- Header -->
