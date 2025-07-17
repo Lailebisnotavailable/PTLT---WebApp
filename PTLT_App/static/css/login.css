@@ -13,7 +13,7 @@ body {
 
 /* Header section */
 .login-header {
-    background-color: #4c3fd1;
+    background-color: #661e1e;
     color: white;
     padding: 24px;
     text-align: center;
@@ -42,10 +42,11 @@ body {
 
 /* Login button */
 .btn-login {
-    background-color: #4c3fd1;
+    background-color: #661e1e;
     color: white;
 }
 
 .btn-login:hover {
-    background-color: #3c30a8;
+    background-color: #a74545;
+    color: white;
 }

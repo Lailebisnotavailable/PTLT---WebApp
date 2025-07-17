@@ -1,0 +1,17 @@
+.btn-red {
+    background-color: #a74545;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-red:hover {
+  background-color: #cc6565;
+  color: #ffffff;
+}
+
+.custom-min-width {
+  min-width: 700px;
+}
