@@ -27,7 +27,10 @@
             <a href="http://127.0.0.1:8000/student_attendance_records" class="px-3 border-end custom-link">Student Attendance Records</a>
             <a href="http://127.0.0.1:8000/schedule" class="px-3 custom-link">Schedule</a>
         </div>
-        <button class="btn m-2 logout_btn">Logout</button>
+        <div class="d-flex align-items-center gap-3 pe-3">
+            <button id="helpBtn" class="btn btn-outline-info" type="button">Need Help?</button>
+            <button class="btn btn-outline-danger logout_btn">Logout</button>
+        </div>
     </div>
 
     <hr>
@@ -203,6 +206,67 @@
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> <!-- Para sa pdf saving -->
 <script src="{% static 'js/instructor_schedule.js' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const helpImage = document.getElementById("helpImage");
+
+  // Static help steps (image paths)
+  const helpSteps = [
+    "{% static 'image/schedule_inst.png' %}",
+    "{% static 'image/attendance_records_inst.png' %}",
+  ];
+
+  let currentStep = 0;
+  helpImage.src = helpSteps[currentStep];
+
+  // Previous Button
+  document.getElementById("prevHelp").onclick = () => {
+    if (currentStep > 0) {
+      currentStep--;
+      helpImage.src = helpSteps[currentStep];
+    }
+  };
+
+  // Next Button
+  document.getElementById("nextHelp").onclick = () => {
+    if (currentStep < helpSteps.length - 1) {
+      currentStep++;
+      helpImage.src = helpSteps[currentStep];
+    }
+  };
+
+  // Open modal manually in case script is controlling it
+  const helpBtn = document.getElementById("helpBtn");
+  if (helpBtn) {
+    helpBtn.addEventListener("click", function () {
+      const modal = new bootstrap.Modal(document.getElementById("helpGuideModal"));
+      modal.show();
+    });
+  }
+});
+</script>
+
+<!-- Modal -->
+<!-- Modal -->
+<div class="modal fade" id="helpGuideModal" tabindex="-1" aria-labelledby="helpGuideLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered"> <!-- Changed to modal-xl -->
+    <div class="modal-content shadow">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="helpGuideLabel">Help Guide</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body d-flex justify-content-center" id="helpSlide">
+        <img id="helpImage" src="" alt="Help Guide Step" class="img-fluid rounded shadow" style="max-height: 75vh;" />
+      </div>
+      <div class="modal-footer d-flex justify-content-between">
+        <button id="prevHelp" class="btn btn-secondary">Previous</button>
+        <button id="nextHelp" class="btn btn-primary">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 </body>
 </html>

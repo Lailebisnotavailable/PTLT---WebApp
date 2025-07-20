@@ -66,3 +66,4 @@ document.addEventListener("DOMContentLoaded", function () {
         html2pdf().set(opt).from(element).save();
     });
 });
+

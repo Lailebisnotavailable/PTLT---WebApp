@@ -1,3 +1,4 @@
+
 document.addEventListener("DOMContentLoaded", function () {
     const select = document.getElementById("date-range");
     const thCells = document.querySelectorAll(".date-th");
@@ -21,19 +22,21 @@ document.addEventListener("DOMContentLoaded", function () {
         return dates;
     }
 
-    select.addEventListener("change", function () {
-        const [startStr, endStr] = this.value.split("_to_");
-        const dateArray = getDateRange(startStr, endStr);
+    if (select && thCells.length) {
+        select.addEventListener("change", function () {
+            const [startStr, endStr] = this.value.split("_to_");
+            const dateArray = getDateRange(startStr, endStr);
 
-        thCells.forEach((cell, index) => {
-            if (index < dateArray.length) {
-                cell.textContent = formatDateMMDD(dateArray[index]);
-            } else {
-                cell.textContent = "";
-            }
+            thCells.forEach((cell, index) => {
+                if (index < dateArray.length) {
+                    cell.textContent = formatDateMMDD(dateArray[index]);
+                } else {
+                    cell.textContent = "";
+                }
+            });
         });
-    });
 
-    select.dispatchEvent(new Event("change"));
+        select.dispatchEvent(new Event("change"));
+    }
 });
 

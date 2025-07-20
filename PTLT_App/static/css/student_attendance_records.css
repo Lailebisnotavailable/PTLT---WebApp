@@ -64,10 +64,6 @@ body {
   transform: scaleX(1);
 }
 
-
-
-
-
 h2 {
   color: #343a40;
 }
@@ -102,10 +98,23 @@ h2 {
   min-width: 400px;
 }
 
+.modal-body img {
+    max-height: 600px;
+    object-fit: contain;
+}
 
+.modal-header {
+    border-bottom: 2px solid #0dcaf0;
+}
 
+.modal-header {
+  border-bottom: 2px solid #0dcaf0;
+}
 
+.modal-footer button {
+  min-width: 120px;
+}
 
-
-
-
+#helpImage {
+  border: 1px solid #dee2e6;
+}

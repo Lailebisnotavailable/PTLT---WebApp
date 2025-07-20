@@ -102,12 +102,15 @@ h2 {
   min-width: 400px;
 }
 
+#helpBtn {
+  z-index: 1000;
+  background-color: transparent;
+  border: 1px solid #0dcaf0; /* Info color */
+  color: #0dcaf0;
+  transition: all 0.3s ease;
+}
 
-
-
-
-
-
-
-
-
+#helpBtn:hover {
+  background-color: #0dcaf0;
+  color: white;
+}
