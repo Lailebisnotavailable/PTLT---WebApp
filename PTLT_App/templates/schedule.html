@@ -1,9 +1,7 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Always Include -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schedule</title>
@@ -13,13 +11,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Custom CSS -->
-    {% load static %}
     <link rel="stylesheet" href="{% static 'css/schedule.css' %}">
 </head>
 <body>
 
 <div class="container py-4 custom-min-width">
-
     <!-- Top Navigation Bar -->
     <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top position-relative">
         <div class="d-flex cont_links align-items-center">
@@ -35,26 +31,16 @@
 
     <hr>
     <div class="d-flex justify-content-between align-items-center mb-3">
-            
-            <button class="btn btn-primary custom-btn">Export Schedule</button>
+        <button class="btn btn-primary custom-btn">Export Schedule</button>
     </div>
-    <!-- Mga under nito yung masasama sa pdf -->
-    <div id="schedule-overview" class="container py-2 bg-white shadow rounded-4 p-4 py-4">
-        <!-- Schedule Overview Section -->
-        <h2>Schedule Overview</h2>
 
-        <!-- Schedule Table -->
+    <div id="schedule-overview" class="container py-2 bg-white shadow rounded-4 p-4 py-4">
+        <h2>Schedule Overview</h2>
         <div class="table-responsive">
             <table class="table table-bordered align-middle text-center">
                 <thead class="table-light">
                     <tr>
-                        <th>Time</th>
-                        <th>Mon</th>
-                        <th>Tues</th>
-                        <th>Wed</th>
-                        <th>Thurs</th>
-                        <th>Fri</th>
-                        <th>Sat</th>
+                        <th>Time</th><th>Mon</th><th>Tues</th><th>Wed</th><th>Thurs</th><th>Fri</th><th>Sat</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -158,15 +144,14 @@
                         <td></td>
                     </tr>
                 </tbody>
+
             </table>
         </div>
     </div>
 
     <br>
     <div class="container py-2 bg-white shadow rounded-4 p-4 py-4">
-        <!-- Current Courses Table -->
         <h3>Current Courses</h3>
-
         <div class="table-responsive">
             <table class="table table-bordered align-middle text-center">
                 <thead class="table-light">
@@ -189,67 +174,30 @@
                         <td class="timeout">16:00</td>
                         <td class="room">OITC</td>
                         <td>32</td>
-                        <td class="grace">15 </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary toggle-course-edit-btn">Edit</button>
-                        </td>
+                        <td class="grace">15</td>
+                        <td><button class="btn btn-sm btn-outline-primary toggle-course-edit-btn">Edit</button></td>
                     </tr>
-
-                    <!-- Placeholder rows -->
-                    <tr><td colspan="7">-</td></tr>
-                    <tr><td colspan="7">-</td></tr>
+                    <tr><td colspan="8">-</td></tr>
+                    <tr><td colspan="8">-</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
-
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> <!-- Para sa pdf saving -->
-<script src="{% static 'js/instructor_schedule.js' %}"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const helpImage = document.getElementById("helpImage");
 
-  // Static help steps (image paths)
-  const helpSteps = [
-    "{% static 'image/schedule_inst.png' %}",
-    "{% static 'image/attendance_records_inst.png' %}",
-  ];
-
-  let currentStep = 0;
-  helpImage.src = helpSteps[currentStep];
-
-  // Previous Button
-  document.getElementById("prevHelp").onclick = () => {
-    if (currentStep > 0) {
-      currentStep--;
-      helpImage.src = helpSteps[currentStep];
-    }
-  };
-
-  // Next Button
-  document.getElementById("nextHelp").onclick = () => {
-    if (currentStep < helpSteps.length - 1) {
-      currentStep++;
-      helpImage.src = helpSteps[currentStep];
-    }
-  };
-
-  // Open modal manually in case script is controlling it
-  const helpBtn = document.getElementById("helpBtn");
-  if (helpBtn) {
-    helpBtn.addEventListener("click", function () {
-      const modal = new bootstrap.Modal(document.getElementById("helpGuideModal"));
-      modal.show();
-    });
-  }
-});
+<!-- JSON block to pass image URLs to JS -->
+<script id="help-data" type="application/json">
+{
+    "steps": [
+        "{% static 'image/schedule_inst.png' %}",
+        "{% static 'image/attendance_records_inst.png' %}"
+    ]
+}
 </script>
 
 <!-- Modal -->
-<!-- Modal -->
 <div class="modal fade" id="helpGuideModal" tabindex="-1" aria-labelledby="helpGuideLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered"> <!-- Changed to modal-xl -->
+  <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content shadow">
       <div class="modal-header bg-info text-white">
         <h5 class="modal-title" id="helpGuideLabel">Help Guide</h5>
@@ -266,7 +214,9 @@ document.addEventListener("DOMContentLoaded", function () {
   </div>
 </div>
 
-
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="{% static 'js/instructor_schedule.js' %}"></script>
 
 </body>
 </html>
