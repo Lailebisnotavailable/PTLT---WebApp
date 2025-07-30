@@ -30,7 +30,7 @@
        placeholder="Search Users" style="width: 200px;"
        oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
 
-            <button class="btn m-2 logout_btn">Logout</button>
+            <a href="{% url 'logout' %}" class="btn btn-outline-danger logout_btn">Logout</a>
         </div>
     </div>
 

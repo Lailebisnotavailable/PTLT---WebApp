@@ -7,22 +7,125 @@ from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import render_to_string
 from django.db.models import Q
 import json
+from django.contrib.auth.models import User
+from django.db import transaction
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.contrib.auth import logout
 from django.utils.safestring import mark_safe
 from django.core.serializers.json import DjangoJSONEncoder
 from datetime import time
 from django.views.decorators.http import require_POST
+
+from django.shortcuts import render, redirect
 from .models import Account
 from .models import CourseSection
 from .models import ClassSchedule
 
-def login(request):
+
+@transaction.atomic 
+def login_view(request):
+    
+    # Check if any accounts exist
+    if not Account.objects.exists():
+        # Create default admin and instructor accounts
+        default_accounts = [
+            {
+                'user_id': 'admin001',
+                'email': 'admin@example.com',
+                'first_name': 'Admin',
+                'last_name': 'User',
+                'role': 'Admin',
+                'password': 'admin',  # Plaintext; will be hashed
+                'sex': 'Other',
+                'status': 'Active'
+            },
+            {
+                'user_id': 'instructor001',
+                'email': 'instructor@example.com',
+                'first_name': 'Instructor',
+                'last_name': 'User',
+                'role': 'Instructor',
+                'password': 'instructor',
+                'sex': 'Other',
+                'status': 'Active'
+            }
+        ]
+
+        for acc in default_accounts:
+            # Create Django built-in User
+            user = User.objects.create_user(
+                username=acc['user_id'],
+                email=acc['email'],
+                password=acc['password'],
+                first_name=acc['first_name'],
+                last_name=acc['last_name']
+            )
+
+            # Save also to your custom Account model
+            Account.objects.create(
+                user_id=acc['user_id'],
+                email=acc['email'],
+                first_name=acc['first_name'],
+                last_name=acc['last_name'],
+                role=acc['role'],
+                password=acc['password'],  # Store plaintext or hash? Up to you, but it's safer to hash
+                sex=acc['sex'],
+                status=acc['status'],
+                course_section=None
+            )
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        try:
+            # Find the User with this email
+            user_obj = User.objects.get(email=email)
+
+            # Now authenticate using the username (which is user_id or custom set)
+            user = authenticate(request, username=user_obj.username, password=password)
+
+            if user is not None:
+                login(request, user)  # Start session
+
+                try:
+                    # Match the custom Account model by email
+                    account = Account.objects.get(email=email)
+
+                    # Store session details
+                    request.session['user_id'] = account.user_id
+                    request.session['role'] = account.role
+
+                    # Redirect based on role
+                    if account.role == 'Admin':
+                        return redirect('account_management')
+                    elif account.role == 'Instructor':
+                        return redirect('schedule')
+                    else:
+                        messages.error(request, "Unknown user role.")
+                        return redirect('login')
+
+                except Account.DoesNotExist:
+                    messages.error(request, "Custom account not found.")
+                    print("Account lookup failed")
+                    return redirect('login')
+            else:
+                messages.error(request, "Invalid credentials.")
+                print("Auth failed")
+                return redirect('login')
+
+        except User.DoesNotExist:
+            messages.error(request, "No user with that email.")
+            print("User email not found")
+            return redirect('login')
+        
     return render(request, 'login.html')
 
-from django.contrib import messages
+def logout_view(request):
+    logout(request)  # Destroys session and logs out user
+    return redirect('login') 
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Account, CourseSection
+
 
 def create_instructor(request):
     if request.method == 'POST':
