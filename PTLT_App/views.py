@@ -16,8 +16,15 @@ from django.utils.safestring import mark_safe
 from django.core.serializers.json import DjangoJSONEncoder
 from datetime import time
 from django.views.decorators.http import require_POST
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import send_mail
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
 
-from django.shortcuts import render, redirect
 from .models import Account
 from .models import CourseSection
 from .models import ClassSchedule
@@ -177,7 +184,147 @@ def create_instructor(request):
 
 
 def forgot_password(request):
+    if request.method == "POST":
+        email = request.POST.get('email')
+
+        try:
+            # Fetch the user using the default User model
+            user = User.objects.get(email=email)
+
+            # Generate the password reset token
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(str(user.pk).encode())  # This encodes the user ID
+            current_site = get_current_site(request).domain
+            # Generate the reset password URL
+            reset_link = f"http://{current_site}/reset-password/{uid}/{token}/"
+
+            # HTML email content
+            email_subject = 'Password Reset Request'
+            email_body = f"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Password Reset</title>
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f5f5f5;
+                    }}
+                    .container {{
+                        width: 100%;
+                        max-width: 600px;
+                        margin: 0 auto;
+                        background-color: #ffffff;
+                        padding: 20px;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    }}
+                    h1 {{
+                        color: #333;
+                        text-align: center;
+                    }}
+                    p {{
+                        font-size: 1rem;
+                        line-height: 1.5;
+                        color: #555;
+                    }}
+                    .button {{
+                        display: inline-block;
+                        padding: 10px 20px;
+                        background-color: #007bff;
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 4px;
+                        font-size: 1rem;
+                        margin-top: 20px;
+                        text-align: center;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Password Reset Request</h1>
+                    <p>Hello {user.first_name},</p>
+                    <p>We received a request to reset your password. To reset your password, please click the link below:</p>
+                    <p><a href="{reset_link}" class="button">Reset Password</a></p>
+                    <p>If you didn't request a password reset, please ignore this email.</p>
+                    <p>Best regards,<br>Your Company Name</p>
+                </div>
+            </body>
+            </html>
+            """
+
+            # Send the HTML email
+            send_mail(
+                email_subject,
+                '',  # Plain text version of the email (empty since we are sending HTML)
+                'from@example.com',  # Set your sender email
+                [email],
+                fail_silently=False,
+                html_message=email_body  # HTML version of the email
+            )
+
+            # Show success message to the user
+            messages.success(request, 'Password reset link has been sent to your email address.')
+            return redirect('login')
+
+        except User.DoesNotExist:
+            # Handle the case where the user doesn't exist
+            messages.error(request, 'No account found with this email address.')
     return render(request, 'forgot_password.html')
+
+def reset_password(request, encoded_email, token):
+    try:
+        # Decode the user ID from the encoded email
+        try:
+            uid = urlsafe_base64_decode(encoded_email).decode('utf-8')
+            print(f"Decoded user ID: {uid}")
+        except Exception as e:
+            print(f"Error decoding email: {e}")
+            messages.error(request, 'Invalid or expired reset link.')
+            return redirect('login')
+        
+        # Fetch the user based on the decoded ID
+        try:
+            user = User.objects.get(pk=uid)
+        except User.DoesNotExist:
+            print(f"User does not exist for ID: {uid}")
+            messages.error(request, 'User not found.')
+            return redirect('login')
+        
+        # Check if the token matches the user's reset token
+        if default_token_generator.check_token(user, token):
+            if request.method == 'POST':
+                new_password = request.POST.get('password')
+                confirm_password = request.POST.get('confirm_password')
+                print(f"new_password: {new_password}, confirm_password: {confirm_password}")
+
+                # Ensure the passwords match
+                if new_password == confirm_password:
+                    user.set_password(new_password)  # Set the new password
+                    user.save()  # Save the user object
+                    print("Password reset successfully!")
+                    messages.success(request, 'Your password has been reset successfully!')
+                    update_session_auth_hash(request, user)  # Keep the user logged in
+                    return redirect('login')  # Redirect to login page
+                else:
+                    messages.error(request, 'Passwords do not match. Please try again.')
+
+            return render(request, 'pass_reset.html', {'uid': encoded_email, 'token': token})
+
+        else:
+            print(f"Invalid token for user: {uid}")
+            messages.error(request, 'Invalid or expired reset link.')
+            return redirect('login')
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        messages.error(request, 'An error occurred during password reset. Please try again later.')
+        return redirect('login')
+    return render(request, 'reset_password.html')
 
 def student_attendance_records(request):
     return render(request, 'student_attendance_records.html')
