@@ -39,7 +39,7 @@ def login_view(request):
         default_accounts = [
             {
                 'user_id': 'admin001',
-                'email': 'admin@example.com',
+                'email': 'shintura0609@gmail.com',
                 'first_name': 'Admin',
                 'last_name': 'User',
                 'role': 'Admin',
@@ -49,7 +49,7 @@ def login_view(request):
             },
             {
                 'user_id': 'instructor001',
-                'email': 'instructor@example.com',
+                'email': 'sjpotpot13@gmail.com',
                 'first_name': 'Instructor',
                 'last_name': 'User',
                 'role': 'Instructor',
@@ -193,7 +193,7 @@ def forgot_password(request):
 
             # Generate the password reset token
             token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(str(user.pk).encode())  # This encodes the user ID
+            uid = urlsafe_base64_encode(force_bytes(user.pk)) # This encodes the user ID
             current_site = get_current_site(request).domain
             # Generate the reset password URL
             reset_link = f"http://{current_site}/reset-password/{uid}/{token}/"
@@ -313,7 +313,7 @@ def reset_password(request, encoded_email, token):
                 else:
                     messages.error(request, 'Passwords do not match. Please try again.')
 
-            return render(request, 'pass_reset.html', {'uid': encoded_email, 'token': token})
+            return render(request, 'reset_password.html', {'uid': encoded_email, 'token': token})
 
         else:
             print(f"Invalid token for user: {uid}")
@@ -324,7 +324,7 @@ def reset_password(request, encoded_email, token):
         print(f"Error occurred: {e}")
         messages.error(request, 'An error occurred during password reset. Please try again later.')
         return redirect('login')
-    return render(request, 'reset_password.html')
+    
 
 def student_attendance_records(request):
     return render(request, 'student_attendance_records.html')
