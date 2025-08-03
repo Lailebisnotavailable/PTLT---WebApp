@@ -1,4 +1,5 @@
 {% load static %}
+{% load schedule_tags %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -36,118 +37,73 @@
 
     <div id="schedule-overview" class="container py-2 bg-white shadow rounded-4 p-4 py-4">
         <h2>Schedule Overview</h2>
-        <div class="table-responsive">
-            <table class="table table-bordered align-middle text-center">
-                <thead class="table-light">
-                    <tr>
-                        <th>Time</th><th>Mon</th><th>Tues</th><th>Wed</th><th>Thurs</th><th>Fri</th><th>Sat</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>7:00 - 9:00 AM</td>
-                        <td></td>
-                        <td></td>
-                        <td>Subject and section</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>8:00 - 9:00 AM</td>
-                        <td>Subject</td>
-                        <td></td>
-                        <td></td>
-                        <td>Subject</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>9:00 - 10:00 AM</td>
-                        <td></td>
-                        <td>Subject</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>10:00 - 11:00 AM</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>11:00 - 12:00 NN</td>
-                        <td>Subject</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td>Subject</td>
-                        <td>Subject</td>
-                    </tr>
-                    <tr>
-                        <td>12:00 - 1:00 PM</td>
-                        <td></td>
-                        <td>Subject</td>
-                        <td>Subject</td>
-                        <td>Subject</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>1:00 - 2:00 PM</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>2:00 - 3:00 PM</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>3:00 - 4:00 PM</td>
-                        <td>Subject</td>
-                        <td>Subject</td>
-                        <td></td>
-                        <td>Subject</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>4:00 - 5:00 PM</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>5:00 - 6:00 PM</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                </tbody>
-
-            </table>
-        </div>
+        <div id='calendar'></div>
     </div>
+
+    <!-- FullCalendar Scripts -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl = document.getElementById('calendar');
+
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            allDaySlot: false,
+            slotMinTime: "07:00:00",
+            slotMaxTime: "18:00:00",
+
+            eventDidMount: function(info) {
+                const { courseCode, courseTitle, room, timeIn, timeOut } = info.event.extendedProps;
+
+                const customHTML = `
+                    <div style="white-space: normal; line-height: 1.2; font-size: 0.85rem;">
+                        ${courseCode} - ${courseTitle}<br>
+                        (${room} – ${timeIn} to ${timeOut})
+                    </div>
+                `;
+
+                const titleEl = info.el.querySelector('.fc-event-title');
+                if (titleEl) {
+                    titleEl.innerHTML = customHTML;
+                }
+            },
+
+            events: [
+                {% for sched in class_schedules %}
+                {
+                    title: "",  // We override this in eventDidMount
+                    extendedProps: {
+                        courseCode: "{{ sched.course_code }}",
+                        courseTitle: "{{ sched.course_title }}",
+                        section: "{{ sched.course_section }}",
+                        room: "{{ sched.room_assignment }}",
+                        timeIn: "{{ sched.time_in|time:'H:i' }}",
+                        timeOut: "{{ sched.time_out|time:'H:i' }}"
+                    },
+                    daysOfWeek: [
+                        {% for day in sched.day_list %}
+                            {% if day|lower == 'monday' %}1{% elif day|lower == 'tuesday' %}2
+                            {% elif day|lower == 'wednesday' %}3{% elif day|lower == 'thursday' %}4
+                            {% elif day|lower == 'friday' %}5{% elif day|lower == 'saturday' %}6
+                            {% elif day|lower == 'sunday' %}0{% endif %}{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+                    startTime: "{{ sched.time_in|time:'H:i:s' }}",
+                    endTime: "{{ sched.time_out|time:'H:i:s' }}",
+                    startRecur: new Date().getFullYear() + "-01-01",
+                    endRecur: new Date().getFullYear() + "-12-31",
+                },
+                {% endfor %}
+            ]
+        });
+
+        calendar.render();
+    });
+    </script>
+
+
 
     <br>
     <div class="container py-2 bg-white shadow rounded-4 p-4 py-4">

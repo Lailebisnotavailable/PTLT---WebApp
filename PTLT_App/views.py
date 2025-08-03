@@ -20,6 +20,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
+from datetime import time, timedelta, datetime
 from django.core.mail import send_mail
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -29,6 +30,17 @@ from .models import Account
 from .models import CourseSection
 from .models import ClassSchedule
 
+#para to sa schedule ni instructor
+PERIODS = [
+    (time(9, 30), time(10, 20), "I"),
+    (time(10, 20), time(11, 10), "II"),
+    (time(11, 10), time(12, 0), "III"),
+    (time(12, 0), time(12, 40), "Break"),  # Lunch
+    (time(12, 40), time(13, 30), "IV"),
+    (time(13, 30), time(14, 20), "V"),
+    (time(14, 20), time(15, 10), "VI"),
+    (time(15, 10), time(16, 0), "VII"),
+]
 
 @transaction.atomic 
 def login_view(request):
@@ -329,8 +341,19 @@ def reset_password(request, encoded_email, token):
 def student_attendance_records(request):
     return render(request, 'student_attendance_records.html')
 
-def schedule(request):
-    return render(request, 'schedule.html')
+@login_required
+def instructor_schedule(request):
+    user = request.user
+    try:
+        instructor = Account.objects.get(user_id=user.username, role='Instructor')
+    except Account.DoesNotExist:
+        return render(request, 'error.html', {'message': 'Instructor not found.'})
+
+    schedules = ClassSchedule.objects.filter(professor=instructor)
+
+    return render(request, 'schedule.html', {
+        'class_schedules': schedules,
+    })
 
 def account_management(request):
     role_filter = request.GET.get('role', '')

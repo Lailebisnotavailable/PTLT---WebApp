@@ -11,7 +11,6 @@ body {
   display: flex;
   padding: 1rem;
   color: #ffffff;
-
 }
 
 .cont_links {
@@ -64,10 +63,6 @@ body {
   transform: scaleX(1);
 }
 
-
-
-
-
 h2 {
   color: #343a40;
 }
@@ -80,6 +75,7 @@ h2 {
   border-radius: 4px;
   cursor: pointer;
 }
+
 .logout_btn:hover {
   background-color: #cc6565;
   color: #ffffff;
@@ -93,6 +89,7 @@ h2 {
   border-radius: 4px;
   cursor: pointer;
 }
+
 .custom-btn:hover {
   background-color: #cc6565;
   color: #ffffff;
@@ -113,4 +110,33 @@ h2 {
 #helpBtn:hover {
   background-color: #0dcaf0;
   color: white;
+}
+
+/* ============================= */
+/* ✅ FullCalendar Custom Fixes */
+/* ============================= */
+
+/* Allow event titles to wrap */
+.fc-event-title {
+  white-space: normal !important;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Optional: Styling and spacing */
+.fc-event {
+  padding: 2px 4px;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.15);
+  background-color: #007bff;
+  color: white;
+  border: none;
+}
+
+/* Prevent event text clipping in month view */
+.fc-daygrid-event {
+  max-height: 4.5em;
+  overflow-y: auto;
 }

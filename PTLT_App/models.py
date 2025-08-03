@@ -66,11 +66,24 @@ class FingerprintRegistration(models.Model):
 
 
 class ClassSchedule(models.Model):
-    professor = models.ForeignKey(Account, on_delete=models.CASCADE, null= True, blank= True, limit_choices_to={'role': 'Instructor'}, verbose_name="Professor")
+    professor = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        limit_choices_to={'role': 'Instructor'},
+        verbose_name="Professor"
+    )
     course_title = models.CharField(max_length=255, verbose_name="Course Title")
     course_code = models.CharField(max_length=50, verbose_name="Course Code")
 
-    course_section = models.ForeignKey(CourseSection, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Course & Section")
+    course_section = models.ForeignKey(
+        CourseSection,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Course & Section"
+    )
 
     time_in = models.TimeField(verbose_name="Time In")
     time_out = models.TimeField(verbose_name="Time Out")
@@ -84,6 +97,22 @@ class ClassSchedule(models.Model):
 
     def __str__(self):
         return f"{self.course_code} - {self.course_section} ({self.professor.last_name})"
+
+    @property
+    def day_list(self):
+        day_map = {
+            'mon': 'Monday',
+            'tue': 'Tuesday',
+            'wed': 'Wednesday',
+            'thu': 'Thursday',
+            'fri': 'Friday',
+            'sat': 'Saturday',
+            'sun': 'Sunday',
+        }
+        return [day_map[abbr.strip()[:3].lower()]
+                for abbr in self.days.split('/')
+                if abbr.strip()[:3].lower() in day_map]
+
 
 
 class AttendanceRecord(models.Model):
