@@ -341,7 +341,7 @@ def reset_password(request, encoded_email, token):
 def student_attendance_records(request):
     return render(request, 'student_attendance_records.html')
 
-@login_required
+
 def instructor_schedule(request):
     user = request.user
     try:

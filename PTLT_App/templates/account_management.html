@@ -1,5 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "admin_navbar.html" %}
+{% load static %}
+
+{% block content %}
 <head>
     <!-- Always Include -->
     <meta charset="UTF-8">
@@ -14,33 +16,27 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/account_management.css' %}">
 </head>
-<body>
+<body style="background: linear-gradient(135deg, #e61717, #ea4444, #ee7272, #f29f9f, #f6cdcd, #fafafa);">
 
 <div class="container py-4 custom-min-width">
-
-    <!-- Top Navigation Bar -->
-    <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top">
-        <div class="d-flex align-items-center nav_links">
-            <strong class="pe-3 me-3 fs-5 ptlt">PTLT</strong>
-            <a href="http://127.0.0.1:8000/account_management" class="text-decoration-none border-end pe-3 me-3 custom-link">Account Management</a>
-            <a href="http://127.0.0.1:8000/class_management" class="text-decoration-none custom-link">Class Management </a>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <input type="text" id="search-input" class="form-control form-control-sm"
-       placeholder="Search Users" style="width: 200px;"
-       oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
-
-            <a href="{% url 'logout' %}" class="btn btn-outline-danger logout_btn">Logout</a>
-        </div>
-    </div>
-
-    <hr>
 
     <!-- Main Content Container -->
     <div class="container py-3 bg-white shadow rounded-4 p-4">
 
         <!-- Filter Bar -->
-        <h3 class="mb-4">Filter Accounts</h3>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="mb-0 text-decoration-underline">Account Management</h3>
+
+            <div class="d-flex flex-column align-items-end">
+                <label for="search-input" class="form-label mb-1 fw-semibold">Search User</label>
+                    <input type="text" id="search-input" class="form-control form-control-sm border-secondary"
+                    placeholder="Type First Name or Last Name"
+                    style="width: 210px; box-shadow: 0 0 4px rgba(0, 0, 0, 0.3); font-style: italic;"
+                    oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
+            </div>
+        </div>
+
+        <h3 class="mb-0">Filter Accounts:</h3>
         <div class="row g-3 mb-4">
             <div class="col-md-4">
                 <label for="role" class="form-label">Role:</label>
@@ -121,5 +117,26 @@
 </div>
 <form style="display:none;">{% csrf_token %}</form>
 <script src="{% static 'js/account_management_actions.js' %}"></script>
+
+<!-- Help Guide Modal -->
+<div class="modal fade" id="helpGuideModal" tabindex="-1" aria-labelledby="helpGuideLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="helpGuideLabel">Help Guide</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body d-flex justify-content-center" id="helpSlide">
+        <img id="helpImage" src="" alt="Help Guide Step" class="img-fluid rounded shadow" style="max-height: 75vh;" />
+      </div>
+      <div class="modal-footer d-flex justify-content-between">
+        <button id="prevHelp" class="btn btn-secondary">Previous</button>
+        <button id="nextHelp" class="btn btn-primary">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
-</html>
+
+{% endblock %}
