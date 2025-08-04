@@ -10,6 +10,7 @@ urlpatterns = [
     path('reset-password/<str:encoded_email>/<str:token>/', views.reset_password, name='reset_password'),
     path('student_attendance_records', views.student_attendance_records, name='student_attendance_records'),
     path('schedule', views.instructor_schedule, name='schedule'),
+    path('update-class-schedule_instructor/', views.update_class_schedule_instructor, name='update_class_schedule_instructor'),
     path('account_management/', views.account_management, name='account_management'),
     path('delete_account/<int:account_id>/', views.delete_account, name='delete_account'),
     path('update_account/<int:account_id>/', views.update_account, name='update_account'),

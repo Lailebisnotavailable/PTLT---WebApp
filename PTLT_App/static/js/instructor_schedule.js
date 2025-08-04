@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const room = row.querySelector(".room");
             const grace = row.querySelector(".grace");
 
+            const courseCode = row.querySelector("td:first-child").textContent.trim(); // used for lookup in backend
+
             if (!isEditing) {
                 timein.innerHTML = `<input type="time" class="form-control form-control-sm" value="${timein.textContent.trim()}">`;
                 timeout.innerHTML = `<input type="time" class="form-control form-control-sm" value="${timeout.textContent.trim()}">`;
@@ -29,6 +31,9 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 const timeinVal = timein.querySelector("input").value;
                 const timeoutVal = timeout.querySelector("input").value;
+                const roomVal = room.querySelector("select").value;
+                const graceVal = grace.querySelector("input").value;
+
                 if (timeoutVal <= timeinVal) {
                     alert("Time Out must be later than Time In.");
                     timeout.querySelector("input").focus();
@@ -37,16 +42,61 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (!confirm("Are you sure you want to save these changes?")) return;
 
-                timein.textContent = timeinVal;
-                timeout.textContent = timeoutVal;
-                room.textContent = room.querySelector("select").value;
-                grace.textContent = `${grace.querySelector("input").value} minutes`;
+                // Send AJAX POST to update backend
+                fetch("/update-class-schedule_instructor/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken"),
+                    },
+                    body: JSON.stringify({
+                        course_code: courseCode,
+                        time_in: timeinVal,
+                        time_out: timeoutVal,
+                        room_assignment: roomVal,
+                        grace_period: graceVal,
+                    }),
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response was not OK");
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        timein.textContent = timeinVal;
+                        timeout.textContent = timeoutVal;
+                        room.textContent = roomVal;
+                        grace.textContent = `${graceVal} minutes`;
 
-                this.textContent = "Edit";
-                this.classList.replace("btn-outline-success", "btn-outline-primary");
+                        this.textContent = "Edit";
+                        this.classList.replace("btn-outline-success", "btn-outline-primary");
+                    } else {
+                        alert("Update failed: " + (data.error || "Unknown error"));
+                    }
+                })
+                .catch(error => {
+                    console.error("Error updating schedule:", error);
+                    alert("An error occurred while saving changes.");
+                });
             }
         });
     });
+
+    // CSRF token helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 
     // Export Schedule as PDF
     const exportBtn = document.querySelector('.custom-btn');

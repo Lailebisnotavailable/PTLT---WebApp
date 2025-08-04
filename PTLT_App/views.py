@@ -341,7 +341,45 @@ def reset_password(request, encoded_email, token):
 def student_attendance_records(request):
     return render(request, 'student_attendance_records.html')
 
+@require_POST
+@login_required
+def update_class_schedule_instructor(request):
+    try:
+        data = json.loads(request.body)
 
+        # Validate required fields
+        required_fields = ['course_code', 'time_in', 'time_out', 'room_assignment', 'grace_period']
+        for field in required_fields:
+            if field not in data:
+                return JsonResponse({'success': False, 'error': f'Missing field: {field}'}, status=400)
+
+        # Match instructor via user_id
+        instructor = Account.objects.get(user_id=request.user.username, role='Instructor')
+
+        # Get the specific schedule (only one per instructor + course_code assumed)
+        schedule = ClassSchedule.objects.get(course_code=data['course_code'], professor=instructor)
+
+        # Apply updates
+        schedule.time_in = data['time_in']
+        schedule.time_out = data['time_out']
+        schedule.room_assignment = data['room_assignment']
+        schedule.grace_period = int(data['grace_period'])
+        schedule.save()
+
+        return JsonResponse({'success': True})
+
+    except ClassSchedule.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Class schedule not found.'}, status=404)
+
+    except Account.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Instructor account not found.'}, status=403)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data.'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+@login_required    
 def instructor_schedule(request):
     user = request.user
     try:

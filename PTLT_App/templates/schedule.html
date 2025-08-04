@@ -123,19 +123,30 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for sched in class_schedules %}
                     <tr>
-                        <td>BET3</td>
-                        <td>Technical Research</td>
-                        <td class="timein">13:00</td>
-                        <td class="timeout">16:00</td>
-                        <td class="room">OITC</td>
-                        <td>32</td>
-                        <td class="grace">15</td>
-                        <td><button class="btn btn-sm btn-outline-primary toggle-course-edit-btn">Edit</button></td>
+                        <td>{{ sched.course_code }}</td>
+                        <td>{{ sched.course_title }}</td>
+                        <td class="timein">{{ sched.time_in|time:"H:i" }}</td>
+                        <td class="timeout">{{ sched.time_out|time:"H:i" }}</td>
+                        <td class="room">{{ sched.room_assignment }}</td>
+                        <td>{{ sched.student_count }}</td>
+                        <td class="grace">{{ sched.grace_period }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary toggle-course-edit-btn"
+                                    data-sched-id="{{ sched.id }}">
+                                Edit
+                            </button>
+
+                        </td>
                     </tr>
-                    <tr><td colspan="8">-</td></tr>
-                    <tr><td colspan="8">-</td></tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8">No courses found for this instructor.</td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
+
             </table>
         </div>
     </div>
