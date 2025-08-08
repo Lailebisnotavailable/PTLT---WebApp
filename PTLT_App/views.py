@@ -14,13 +14,13 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.utils.safestring import mark_safe
 from django.core.serializers.json import DjangoJSONEncoder
-from datetime import time
+from datetime import time, timedelta
 from django.views.decorators.http import require_POST
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
-from datetime import time, timedelta, datetime
+import datetime
 from django.core.mail import send_mail
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -339,7 +339,64 @@ def reset_password(request, encoded_email, token):
     
 
 def student_attendance_records(request):
-    return render(request, 'student_attendance_records.html')
+    
+    account = Account.objects.get(email=request.user.email)
+    schedules = ClassSchedule.objects.filter(professor=account)
+
+    subjects_courses = [
+        {
+            "id": sched.id,
+            "label": f"{sched.course_code} - {sched.course_title} ({sched.course_section})",
+            "days": sched.days
+        }
+        for sched in schedules
+    ]
+
+    # Example: assume the school year starts Jan 1 and ends Dec 31 (adjust for your semester)
+    start_date = datetime.date(2025, 1, 1)
+    end_date = datetime.date(2025, 12, 31)
+
+    # Get day-of-week number from schedule (Mon=0, Tue=1, ..., Sun=6)
+    day_map = {
+        'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3,
+        'fri': 4, 'sat': 5, 'sun': 6
+    }
+
+    date_ranges = []
+
+    if schedules.exists():
+        sched = schedules.first()  # Assuming one class for now; can adapt for multiple
+
+        # Handle multiple days like "Mon/Wed/Fri"
+        for day_abbr in sched.days.split('/'):
+            day_abbr = day_abbr.strip().lower()[:3]
+            if day_abbr not in day_map:
+                continue
+
+            weekday_num = day_map[day_abbr]
+
+            # Find all matching weekdays
+            current = start_date
+            matching_dates = []
+            while current <= end_date:
+                if current.weekday() == weekday_num:
+                    matching_dates.append(current)
+                current += datetime.timedelta(days=1)
+
+            # Group into chunks of 8 dates
+            for i in range(0, len(matching_dates), 8):
+                chunk = matching_dates[i:i+8]
+                if len(chunk) > 0:
+                    date_ranges.append((
+                        f"{chunk[0]}_to_{chunk[-1]}",
+                        f"{chunk[0].strftime('%B %d, %Y')} - {chunk[-1].strftime('%B %d, %Y')}"
+                    ))
+
+    return render(request, "student_attendance_records.html", {
+        "subjects_courses": subjects_courses,
+        "date_ranges": date_ranges,
+        "instructor": account,
+    })
 
 @require_POST
 @login_required

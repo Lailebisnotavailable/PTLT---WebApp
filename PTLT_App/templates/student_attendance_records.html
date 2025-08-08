@@ -28,18 +28,24 @@
             <div class="col-md-4">
                 <label for="subject" class="form-label">Subject & Course:</label>
                 <select id="subject" class="form-select">
-                    <option value="course and subject">BET-COET</option>
+                    {% for item in subjects_courses %}
+                        <option value="{{ item.id }}">{{ item.label }}</option>
+                    {% empty %}
+                        <option disabled>No classes assigned</option>
+                    {% endfor %}
                 </select>
             </div>
 
             <div class="col-md-4">
                 <label for="date-range" class="form-label">Date Range:</label>
                 <select id="date-range" class="form-select">
-                    <option value="2025-04-01_to_2025-04-08">April 1, 2025 - April 8, 2025</option>
-                    <option value="2025-04-09_to_2025-04-16">April 9, 2025 - April 16, 2025</option>
-                    <option value="2025-04-17_to_2025-04-24">April 17, 2025 - April 24, 2025</option>
-                    <option value="2025-04-25_to_2025-05-02">April 25, 2025 - May 2, 2025</option>
+                    {% for value, label in date_ranges %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% empty %}
+                        <option disabled>No dates available</option>
+                    {% endfor %}
                 </select>
+
             </div>
         </div>
 
