@@ -27,11 +27,12 @@
         <div class="row g-3 align-items-center mb-4">
             <div class="col-md-4">
                 <label for="subject" class="form-label">Subject & Course:</label>
-                <select id="subject" class="form-select">
-                    {% for item in subjects_courses %}
-                        <option value="{{ item.id }}">{{ item.label }}</option>
-                    {% empty %}
-                        <option disabled>No classes assigned</option>
+                <select id="subject" class="form-select" onchange="this.form.submit()" name="schedule">
+                    <option value="">-- Select Subject & Course --</option>
+                    {% for sched in schedules %}
+                        <option value="{{ sched.id }}" {% if sched.id|stringformat:'s' == selected_schedule_id %}selected{% endif %}>
+                            {{ sched.course_code }} - {{ sched.course_section }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
@@ -39,13 +40,10 @@
             <div class="col-md-4">
                 <label for="date-range" class="form-label">Date Range:</label>
                 <select id="date-range" class="form-select">
-                    {% for value, label in date_ranges %}
-                        <option value="{{ value }}">{{ label }}</option>
-                    {% empty %}
-                        <option disabled>No dates available</option>
+                    {% for dr in date_ranges %}
+                        <option value="{{ dr.value }}">{{ dr.label }}</option>
                     {% endfor %}
                 </select>
-
             </div>
         </div>
 

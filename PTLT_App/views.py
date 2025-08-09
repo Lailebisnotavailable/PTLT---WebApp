@@ -29,7 +29,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Account
 from .models import CourseSection
 from .models import ClassSchedule
-
+from .models import AttendanceRecord
 #para to sa schedule ni instructor
 PERIODS = [
     (time(9, 30), time(10, 20), "I"),
@@ -338,65 +338,46 @@ def reset_password(request, encoded_email, token):
         return redirect('login')
     
 
-def student_attendance_records(request):
+
     
-    account = Account.objects.get(email=request.user.email)
-    schedules = ClassSchedule.objects.filter(professor=account)
+@login_required
+def student_attendance_records(request):
+    # Get logged-in instructor's Account entry
+    try:
+        instructor_account = Account.objects.get(email=request.user.email, role='Instructor')
+    except Account.DoesNotExist:
+        return render(request, "error.html", {"message": "Instructor account not found"})
 
-    subjects_courses = [
-        {
-            "id": sched.id,
-            "label": f"{sched.course_code} - {sched.course_title} ({sched.course_section})",
-            "days": sched.days
-        }
-        for sched in schedules
-    ]
+    # Subjects/Courses taught by this instructor
+    schedules = ClassSchedule.objects.filter(professor=instructor_account)
 
-    # Example: assume the school year starts Jan 1 and ends Dec 31 (adjust for your semester)
-    start_date = datetime.date(2025, 1, 1)
-    end_date = datetime.date(2025, 12, 31)
-
-    # Get day-of-week number from schedule (Mon=0, Tue=1, ..., Sun=6)
-    day_map = {
-        'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3,
-        'fri': 4, 'sat': 5, 'sun': 6
-    }
-
+    # Get selected schedule ID from GET params
+    selected_schedule_id = request.GET.get("schedule")
     date_ranges = []
 
-    if schedules.exists():
-        sched = schedules.first()  # Assuming one class for now; can adapt for multiple
+    if selected_schedule_id:
+        # Filter attendance for this class
+        attendance_dates = AttendanceRecord.objects.filter(
+            class_schedule_id=selected_schedule_id
+        ).values_list("date", flat=True).distinct().order_by("date")
 
-        # Handle multiple days like "Mon/Wed/Fri"
-        for day_abbr in sched.days.split('/'):
-            day_abbr = day_abbr.strip().lower()[:3]
-            if day_abbr not in day_map:
-                continue
+        attendance_dates = list(attendance_dates)
 
-            weekday_num = day_map[day_abbr]
+        # Group into ranges of 8 days
+        for i in range(0, len(attendance_dates), 8):
+            start_date = attendance_dates[i]
+            end_date = attendance_dates[min(i + 7, len(attendance_dates) - 1)]
+            date_ranges.append({
+                "value": f"{start_date}_to_{end_date}",
+                "label": f"{start_date.strftime('%B %d, %Y')} - {end_date.strftime('%B %d, %Y')}"
+            })
 
-            # Find all matching weekdays
-            current = start_date
-            matching_dates = []
-            while current <= end_date:
-                if current.weekday() == weekday_num:
-                    matching_dates.append(current)
-                current += datetime.timedelta(days=1)
-
-            # Group into chunks of 8 dates
-            for i in range(0, len(matching_dates), 8):
-                chunk = matching_dates[i:i+8]
-                if len(chunk) > 0:
-                    date_ranges.append((
-                        f"{chunk[0]}_to_{chunk[-1]}",
-                        f"{chunk[0].strftime('%B %d, %Y')} - {chunk[-1].strftime('%B %d, %Y')}"
-                    ))
-
-    return render(request, "student_attendance_records.html", {
-        "subjects_courses": subjects_courses,
+    context = {
+        "schedules": schedules,
         "date_ranges": date_ranges,
-        "instructor": account,
-    })
+        "selected_schedule_id": selected_schedule_id
+    }
+    return render(request, "student_attendance_records.html", context)
 
 @require_POST
 @login_required
