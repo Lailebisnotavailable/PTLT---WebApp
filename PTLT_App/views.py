@@ -570,3 +570,9 @@ def delete_class_schedule(request, pk):
 
 def attendance_report_template(request):
     return render(request, 'attendance_report_template.html')
+
+def attendance_report_template(request):
+    context = {
+        'rows': range(1, 41)  # This creates numbers 1-40
+    }
+    return render(request, 'attendance_report_template.html', context)

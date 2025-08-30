@@ -10,147 +10,143 @@
     <!-- Custom CSS -->
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/attendance_report_template.css' %}">
-    <style>
-        .logo-box {
-            border: 1px solid #000;
-            min-width: 100px;
-            min-height: 100px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .attendance-table th, .attendance-table td {
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        /* Hide export/print buttons in PDF and print */
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-        }
-    </style>
+    
 </head>
-<body class="p-4">
+<body class="p-1">
 
 <div class="container py-4 custom-min-width">
-    <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top">
+    <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top d-print-none">
         <!-- Header Buttons -->
-        <div class="d-flex align-items-center nav_links no-print">
-            <strong class="pe-3 me-3 fs-5 ptlt">Document Plotter</strong>
+        <div class="d-flex align-items-center nav_links d-print-none">
+            <strong class="pe-3 me-3 fs-5 ptlt no-print">Document Plotter</strong>
         </div>
-            <div class="d-flex align-items-center">
-                <button class="btn btn-sm btn-red me-2" onclick="exportToPDF()">Export</button>
-                <button class="btn btn-sm btn-red me-2" onclick="window.print()">Print</button>
-            </div>
+        <div class="d-flex align-items-center d-print-none">
+            <button class="btn btn-sm btn-red me-2 " onclick="exportToPDF()">Export</button>
+            <button class="btn btn-sm btn-red me-2" onclick="window.print()">Print</button>
+        </div>
     </div>
-    <!-- Document Content -->
-    <div id="attendance-doc" class="border p-3">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="logo-box">LOGO</div>
-            <div class="text-center w-100">
-                <strong>TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES</strong><br>
-                CAVITE CAMPUS<br>
-                Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, Philippines<br>
-                Telefax: (046) 416-4920 | Email: cavite@tup.edu.ph | Website: www.tup.edu.ph
-            </div>
-        </div>
 
-        <div class="text-center mb-2">
-            <h5 class="mb-0">CLASS ATTENDANCE MONITORING FORM</h5>
-            <small>Page 1/1</small>
-        </div>
+    <!-- Document Content -->
+    <div id="attendance-doc" class="p-1">
+        
+        <!-- Header -->
+        <table class="table table-bordered border-dark w-100 align-middle">
+            <tr>
+                <!-- Logo -->
+                <td class="text-center align-middle" style="width: 120px;">
+                    <div class="logo-box">LOGO</div>
+                </td>
+                <!-- University Info -->
+                <td class="text-center align-middle" colspan="2">
+                    <strong>TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES</strong><br>
+                    <strong>CAVITE CAMPUS</strong><br>
+                    Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, Philippines<br>
+                    Telefax: (046) 416-4920 <br> Email: cavite@tup.edu.ph | Website: www.tup.edu.ph
+                </td><br>
+            </tr>
+            <tr>
+                <!-- Department -->
+                <td class="text-center align-middle"><strong>DEPARTMENT</strong></td>
+                <!-- Title -->
+                <td class="text-center align-middle">
+                    <strong>CLASS ATTENDANCE MONITORING FORM</strong>
+                </td>
+                <!-- Page Number (new column) -->
+                <td class="text-center align-middle" style="width: 100px;">
+                    <small>Page 1/1</small>
+                </td>
+            </tr>
+        </table>
 
         <!-- Class Details -->
-        <div class="border mb-3 p-2">
-            <div class="row">
-                <div class="col-3"><strong>SUBJECT</strong></div>
-                <div class="col-3 border-start">[Subject]</div>
-                <div class="col-3"><strong>FACULTY IN-CHARGE</strong></div>
-                <div class="col-3 border-start">[Faculty Name]</div>
-            </div>
-            <div class="row border-top">
-                <div class="col-3"><strong>COURSE</strong></div>
-                <div class="col-3 border-start">[Course]</div>
-                <div class="col-3"><strong>BLDG. & ROOM NO.</strong></div>
-                <div class="col-3 border-start">[Room]</div>
-            </div>
-            <div class="row border-top">
-                <div class="col-3"><strong>YEAR & SECTION</strong></div>
-                <div class="col-3 border-start">[Section]</div>
-                <div class="col-3"><strong>SCHEDULE (DAY & TIME)</strong></div>
-                <div class="col-3 border-start">[Schedule]</div>
-            </div>
-        </div>
-
-        <!-- Attendance Table -->
-        <table class="table table-bordered attendance-table">
-            <thead class="table-light">
-                <tr>
-                    <th rowspan="2">No.</th>
-                    <th rowspan="2">Name</th>
-                    <th rowspan="2">Sex (M/F)</th>
-                    <th colspan="8">Status or Signature?</th>
-                </tr>
-                <tr>
-                    <th>Date</th><th>Date</th><th>Date</th><th>Date</th>
-                    <th>Date</th><th>Date</th><th>Date</th><th>Date</th>
-                </tr>
-            </thead>
+       <table class="table table-bordered border-dark mb-3">
             <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>Mark Trieste Milan</td>
-                    <td>M</td>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                <!-- Full-width header row -->
+                <tr class="table-dark text-white">
+                    <td colspan="4" class="fw-bold">DETAILS OF CLASS</td>
                 </tr>
                 <tr>
-                    <td>2</td>
-                    <td>Mark Joshua Salinas</td>
-                    <td>M</td>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    <td><strong>SUBJECT</strong></td>
+                    <td>[Subject]</td>
+                    <td><strong>FACULTY IN-CHARGE</strong></td>
+                    <td>[Faculty Name]</td>
                 </tr>
                 <tr>
-                    <td>3</td>
-                    <td>Xander Yangco</td>
-                    <td>M</td>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    <td><strong>COURSE</strong></td>
+                    <td>[Course]</td>
+                    <td><strong>BLDG. & ROOM NO.</strong></td>
+                    <td>[Room]</td>
+                </tr>
+                <tr>
+                    <td><strong>YEAR & SECTION</strong></td>
+                    <td>[Section]</td>
+                    <td><strong>SCHEDULE (DAY & TIME)</strong></td>
+                    <td>[Schedule]</td>
                 </tr>
             </tbody>
         </table>
+
+       <!-- Attendance Table -->
+        <div class="table-responsive">
+            <table class="table table-bordered border-dark attendance-table">
+               <thead class="table-secondary text-dark border-dark">
+                    <tr>
+                        <th rowspan="2">No.</th>
+                        <th rowspan="2">Name</th>
+                        <th rowspan="2">Sex (M/F)</th>
+                        <th colspan="8">Status</th>
+                    </tr>
+                    <tr>
+                        <th>Date</th><th>Date</th><th>Date</th><th>Date</th>
+                        <th>Date</th><th>Date</th><th>Date</th><th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in rows %}
+                    <tr>
+                        <td>{{ i }}</td>
+                        <td></td><td></td><td></td><td></td><td></td>
+                        <td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         <!-- Pagination -->
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <span>Showing 1 result</span>
+        <div class="d-flex justify-content-between align-items-center mt-3 d-print-none">
+            <span>Showing 1–3 of 3 results</span>
             <div>
                 <button class="btn btn-outline-secondary btn-sm">&lt;</button>
                 <button class="btn btn-secondary btn-sm">1</button>
                 <button class="btn btn-outline-secondary btn-sm">&gt;</button>
             </div>
         </div>
+
         <!-- Footer Buttons -->
-        <div class="d-flex justify-content-between mt-3 no-print">
+        <div class="d-flex justify-content-between mt-3 d-print-none">
             <button class="btn btn-secondary" onclick="window.location.href='http://127.0.0.1:8000/student_attendance_records';">Back</button>
         </div>
     </div>
 </div>
-    <!-- html2pdf.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script>
-        function exportToPDF() {
-            const element = document.getElementById('attendance-doc');
-            const opt = {
-                margin:       0.5,
-                filename:     'Class_Attendance_Form.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
-                pagebreak:    { mode: ['avoid-all'] }
-            };
-            html2pdf().set(opt).from(element).save();
-        }
-    </script>
+
+<!-- html2pdf.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+    function exportToPDF() {
+        const element = document.getElementById('attendance-doc');
+        const opt = {
+            margin:       0.5,
+            filename:     'Class_Attendance_Form.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all'] }
+        };
+        html2pdf().set(opt).from(element).save();
+    
+    }
+    
+</script>
 
 </body>
 </html>
