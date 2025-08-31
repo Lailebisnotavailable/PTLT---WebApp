@@ -1,7 +1,8 @@
+{% extends "inst_navbar.html" %}
 {% load static %}
 {% load schedule_tags %}
-<!DOCTYPE html>
-<html>
+
+{% block content %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,29 +15,16 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/schedule.css' %}">
 </head>
-<body>
+<body style="background: linear-gradient(135deg, #e61717, #ea4444, #ee7272, #f29f9f, #f6cdcd, #fafafa);">
 
 <div class="container py-4 custom-min-width">
-    <!-- Top Navigation Bar -->
-    <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top position-relative">
-        <div class="d-flex cont_links align-items-center">
-            <strong class="p-3 fs-5 ptlt">PTLT</strong>
-            <a href="http://127.0.0.1:8000/student_attendance_records" class="px-3 border-end custom-link">Student Attendance Records</a>
-            <a href="http://127.0.0.1:8000/schedule" class="px-3 custom-link">Schedule</a>
-        </div>
-        <div class="d-flex align-items-center gap-3 pe-3">
-            <button id="helpBtn" class="btn btn-outline-info" type="button">Need Help?</button>
-            <a href="{% url 'logout' %}" class="btn btn-outline-danger logout_btn">Logout</a>
-        </div>
-    </div>
 
-    <hr>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <button class="btn btn-primary custom-btn">Export Schedule</button>
     </div>
 
     <div id="schedule-overview" class="container py-2 bg-white shadow rounded-4 p-4 py-4">
-        <h2>Schedule Overview</h2>
+        <h2 class="mb-4 text-decoration-underline">Schedule Overview</h2>
         <div id='calendar'></div>
     </div>
 
@@ -107,7 +95,7 @@
 
     <br>
     <div class="container py-2 bg-white shadow rounded-4 p-4 py-4">
-        <h3>Current Courses</h3>
+        <h3 class="mb-4 text-decoration-underline">Current Courses</h3>
         <div class="table-responsive">
             <table class="table table-bordered align-middle text-center">
                 <thead class="table-light">
@@ -186,4 +174,4 @@
 <script src="{% static 'js/instructor_schedule.js' %}"></script>
 
 </body>
-</html>
+{% endblock %}
