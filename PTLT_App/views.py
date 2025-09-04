@@ -205,14 +205,16 @@ def forgot_password(request):
 
             # Generate the password reset token
             token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(force_bytes(user.pk)) # This encodes the user ID
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
             current_site = get_current_site(request).domain
             # Generate the reset password URL
             reset_link = f"http://{current_site}/reset-password/{uid}/{token}/"
 
-            # HTML email content
+            # HTML email content - using triple quotes without f-string for CSS, then formatting
             email_subject = 'Password Reset Request'
-            email_body = f"""
+            
+            # Create the email body using format() method instead of f-string
+            email_body = """
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -245,29 +247,60 @@ def forgot_password(request):
                     }}
                     .button {{
                         display: inline-block;
-                        padding: 10px 20px;
-                        background-color: #007bff;
-                        color: white;
+                        padding: 12px 24px;
+                        background-color: #661e1e;
+                        color: white !important;
                         text-decoration: none;
                         border-radius: 4px;
                         font-size: 1rem;
                         margin-top: 20px;
                         text-align: center;
+                        transition: background-color 0.3s ease;
+                    }}
+                    .button:hover {{
+                        background-color: #a74545;
+                    }}
+                    .footer {{
+                        margin-top: 30px;
+                        padding-top: 20px;
+                        border-top: 1px solid #eee;
+                        font-size: 0.9rem;
+                        color: #777;
+                    }}
+                    .warning {{
+                        background-color: #fff3cd;
+                        border: 1px solid #ffeaa7;
+                        border-radius: 4px;
+                        padding: 15px;
+                        margin: 20px 0;
+                        color: #856404;
                     }}
                 </style>
             </head>
             <body>
                 <div class="container">
+                    <div class="header-accent"></div>
                     <h1>Password Reset Request</h1>
-                    <p>Hello {user.first_name},</p>
-                    <p>We received a request to reset your password. To reset your password, please click the link below:</p>
+                    <p>Hello {first_name},</p>
+                    <p>We received a request to reset your password for your account. To proceed with resetting your password, please click the button below:</p>
                     <p><a href="{reset_link}" class="button">Reset Password</a></p>
-                    <p>If you didn't request a password reset, please ignore this email.</p>
-                    <p>Best regards,<br>Your Company Name</p>
+                    
+                    <div class="warning">
+                        <strong>Security Notice:</strong> This link will expire in 24 hours for your security. If you didn't request this password reset, please ignore this email and your password will remain unchanged.
+                    </div>
+                    
+                    <div class="footer">
+                        <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
+                        <p style="word-break: break-all; color: #dc2626 !important; font-weight: 600; text-decoration: none !important;">{reset_link}</p>
+                        <p style="margin-top: 20px;">
+                            <span style="color: #6b7280;">Best regards,</span><br>
+                            <strong style="color: #dc2626;">PTLT TUP-CAVITE</strong>
+                        </p>
+                    </div>
                 </div>
             </body>
             </html>
-            """
+            """.format(first_name=user.first_name, reset_link=reset_link)
 
             # Send the HTML email
             send_mail(
