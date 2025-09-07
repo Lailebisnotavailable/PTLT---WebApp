@@ -43,7 +43,7 @@ from .models import AttendanceRecord
 
 from .serializers import (
     AccountSerializer, ClassScheduleSerializer, AttendanceRecordSerializer,
-    FingerprintRegistrationSerializer, MobileAccountSerializer, MobileAttendanceSerializer
+    MobileAccountSerializer, MobileAttendanceSerializer
 )
 #para to sa schedule ni instructor
 PERIODS = [

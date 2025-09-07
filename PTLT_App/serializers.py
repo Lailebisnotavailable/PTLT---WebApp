@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import Account, ClassSchedule, AttendanceRecord, FingerprintRegistration
+from .models import Account, ClassSchedule, AttendanceRecord
 
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,10 +23,6 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
         model = AttendanceRecord
         fields = '__all__'
 
-class FingerprintRegistrationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FingerprintRegistration
-        fields = '__all__'
 
 # Simplified serializers for mobile sync
 class MobileAccountSerializer(serializers.ModelSerializer):
