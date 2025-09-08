@@ -25,11 +25,26 @@ from django.core.mail import send_mail
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+from datetime import datetime, date
+
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
 
 from .models import Account
 from .models import CourseSection
 from .models import ClassSchedule
 from .models import AttendanceRecord
+
+from .serializers import (
+    AccountSerializer, ClassScheduleSerializer, AttendanceRecordSerializer,
+    MobileAccountSerializer, MobileAttendanceSerializer
+)
 #para to sa schedule ni instructor
 PERIODS = [
     (time(9, 30), time(10, 20), "I"),
@@ -609,3 +624,89 @@ def attendance_report_template(request):
         'rows': range(1, 41)  # This creates numbers 1-40
     }
     return render(request, 'attendance_report_template.html', context)
+
+#para sa api ng django rest(web app - mob app connection)
+class AccountViewSet(viewsets.ModelViewSet):
+    queryset = Account.objects.all()
+    serializer_class = AccountSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['post'])
+    def mobile_sync(self, request):
+        """Sync accounts from mobile to web"""
+        serializer = MobileAccountSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            # Handle sync logic here
+            return Response({'status': 'success'})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ClassScheduleViewSet(viewsets.ModelViewSet):
+    queryset = ClassSchedule.objects.all()
+    serializer_class = ClassScheduleSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def today_schedules(self, request):
+        """Get today's schedules for mobile"""
+        today = timezone.now().date()
+        schedules = ClassSchedule.objects.filter(
+            # Add your filtering logic based on days field
+        )
+        serializer = self.get_serializer(schedules, many=True)
+        return Response(serializer.data)
+
+class AttendanceRecordViewSet(viewsets.ModelViewSet):
+    queryset = AttendanceRecord.objects.all()
+    serializer_class = AttendanceRecordSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['post'])
+    def mobile_upload(self, request):
+        """Upload attendance records from mobile"""
+        serializer = MobileAttendanceSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'status': 'success', 'count': len(serializer.data)})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def download_for_mobile(self, request):
+        """Download attendance records to mobile"""
+        date_param = request.query_params.get('date')
+        if date_param:
+            try:
+                filter_date = datetime.strptime(date_param, '%Y-%m-%d').date()
+                records = AttendanceRecord.objects.filter(date=filter_date)
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            records = AttendanceRecord.objects.all()
+        
+        serializer = MobileAttendanceSerializer(records, many=True)
+        return Response(serializer.data)
+
+# Authentication endpoint for mobile
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def mobile_login(request):
+    """Login endpoint for mobile app"""
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    if username and password:
+        user = authenticate(username=username, password=password)
+        if user:
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({
+                'token': token.key,
+                'user_id': user.id,
+                'username': user.username
+            })
+    
+    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)

@@ -19,9 +19,17 @@ class Account(models.Model):
     email = models.EmailField(unique=True, verbose_name="Email Address")
     first_name = models.CharField(max_length=100, verbose_name="First Name")
     last_name = models.CharField(max_length=100, verbose_name="Last Name")
-    role = models.CharField(max_length=50, choices=[('Admin', 'Admin'), ('Instructor', 'Instructor')], verbose_name="Role")
+    role = models.CharField(
+        max_length=50,
+        choices=[('Admin', 'Admin'), ('Instructor', 'Instructor'), ('Student', 'Student')],
+        verbose_name="Role"
+    )
     password = models.CharField(max_length=255, verbose_name="Password")
-    sex = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], verbose_name="Sex")
+    sex = models.CharField(
+        max_length=10,
+        choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')],
+        verbose_name="Sex"
+    )
     status = models.CharField(
         max_length=20,
         choices=[('Active', 'Active'), ('Inactive', 'Inactive'), ('Pending', 'Pending')],
@@ -29,40 +37,17 @@ class Account(models.Model):
         verbose_name="Account Status"
     )
 
-    course_section = models.ForeignKey(CourseSection, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Course & Section")
+    course_section = models.ForeignKey(
+        CourseSection, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Course & Section"
+    )
+
+    # New fields moved over from FingerprintRegistration
+    fingerprint_template = models.BinaryField(null=True, blank=True, verbose_name="Fingerprint Template")
+    date_registered = models.DateTimeField(default=timezone.now, verbose_name="Date of Registration")
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.role})"
 
-
-class FingerprintRegistration(models.Model):
-    user_id = models.CharField(max_length=50, unique=True, verbose_name="School ID Number")
-    email = models.EmailField(verbose_name="Email Address")
-    first_name = models.CharField(max_length=100, verbose_name="First Name")
-    last_name = models.CharField(max_length=100, verbose_name="Last Name")
-    
-    role = models.CharField(
-        max_length=20,
-        choices=[('student', 'Student'), ('instructor', 'Instructor')],
-        verbose_name="Role"
-    )
-    
-    sex = models.CharField(
-        max_length=10,
-        choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')],
-        verbose_name="Sex"
-    )
-
-    course_section = models.ForeignKey(CourseSection, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Course & Section")
-
-    fingerprint_data = models.BinaryField(verbose_name="Fingerprint Data")
-    date_registered = models.DateTimeField(default=timezone.now, verbose_name="Date of Registration")
-
-    device_id = models.CharField(max_length=100, verbose_name="Registered From Device", blank=True, null=True)
-    synced = models.BooleanField(default=False, verbose_name="Synced to Cloud")
-
-    def __str__(self):
-        return f"{self.date_registered} - {self.user_id} - {self.role}"
 
 
 class ClassSchedule(models.Model):
@@ -119,8 +104,16 @@ class AttendanceRecord(models.Model):
     date = models.DateField(default=timezone.now, verbose_name="Date")
 
     class_schedule = models.ForeignKey(ClassSchedule, on_delete=models.CASCADE, verbose_name="Class Schedule")
-    professor = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, limit_choices_to={'role': 'Instructor'}, verbose_name="Professor")
-    student = models.ForeignKey(FingerprintRegistration, on_delete=models.CASCADE, verbose_name="Student")
+    professor = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE,
+        related_name="attendance_as_professor"  # 👈 unique name
+    )
+    student = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE,
+        related_name="attendance_as_student"   # 👈 unique name
+    )
 
     course_section = models.ForeignKey(CourseSection, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Course & Section")
 
