@@ -26,9 +26,9 @@
         <!-- Filter Section -->
         <div class="row g-3 align-items-center mb-4">
             <div class="col-md-4">
-                <label for="subject" class="form-label">Subject & Course:</label>
+                <label for="subject" class="form-label">Subject & Program:</label>
                 <select id="subject" class="form-select" onchange="this.form.submit()" name="schedule">
-                    <option value="">-- Select Subject & Course --</option>
+                    <option value="">-- Select Subject & Program --</option>
                     {% for sched in schedules %}
                         <option value="{{ sched.id }}" {% if sched.id|stringformat:'s' == selected_schedule_id %}selected{% endif %}>
                             {{ sched.course_code }} - {{ sched.course_section }}
