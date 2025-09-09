@@ -40,6 +40,8 @@ from .models import Account
 from .models import CourseSection
 from .models import ClassSchedule
 from .models import AttendanceRecord
+from .models import Semester
+
 
 from .serializers import (
     AccountSerializer, ClassScheduleSerializer, AttendanceRecordSerializer,
@@ -159,8 +161,6 @@ def logout_view(request):
     logout(request)  # Destroys session and logs out user
     return redirect('login') 
 
-
-
 def create_instructor(request):
     if request.method == 'POST':
         form_type = request.POST.get('form_type')
@@ -208,7 +208,6 @@ def create_instructor(request):
                 messages.error(request, f'Error: {str(e)}')
 
     return render(request, 'create_instructor.html')
-
 
 def forgot_password(request):
     if request.method == "POST":
@@ -385,8 +384,6 @@ def reset_password(request, encoded_email, token):
         messages.error(request, 'An error occurred during password reset. Please try again later.')
         return redirect('login')
     
-
-
     
 @login_required
 def student_attendance_records(request):
@@ -465,6 +462,7 @@ def update_class_schedule_instructor(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 @login_required    
 def instructor_schedule(request):
     user = request.user
@@ -501,8 +499,6 @@ def account_management(request):
 
     return render(request, 'account_management.html', {'accounts': accounts})
 
-
-
 @csrf_exempt
 def delete_account(request, account_id):
     if request.method == 'POST':
@@ -538,6 +534,14 @@ def update_account(request, account_id):
     return JsonResponse({'status': 'invalid_request'})
 
 def class_management(request):
+    today = timezone.now().date()
+    
+    current_semester = Semester.objects.filter(
+    start_date__lte=today,
+    end_date__gte=today
+    ).first()
+    active_semester = current_semester  # no need to query twice
+    
     course_sections = CourseSection.objects.all()
 
     if request.method == 'POST':
@@ -574,11 +578,11 @@ def class_management(request):
     instructors_json = json.dumps(list(instructors), cls=DjangoJSONEncoder)
 
     return render(request, 'class_management.html', {
+        "active_semester": active_semester,
         'course_sections': course_sections,
         'classes': classes,
         'instructors_json': instructors_json
     })
-
 
 @csrf_exempt
 def update_class_schedule(request, pk):
@@ -605,7 +609,6 @@ def update_class_schedule(request, pk):
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)})
 
-
 @csrf_exempt
 def delete_class_schedule(request, pk):
     if request.method == "POST":
@@ -624,6 +627,53 @@ def attendance_report_template(request):
         'rows': range(1, 41)  # This creates numbers 1-40
     }
     return render(request, 'attendance_report_template.html', context)
+
+def set_semester(request):
+    today = date.today()
+    current_semester = Semester.objects.filter(start_date__lte=today, end_date__gte=today).first()
+
+    if request.method == "POST":
+        start = request.POST.get("semester_start")
+        end = request.POST.get("semester_end")
+
+        if not start or not end:
+            messages.error(request, "Both start and end dates are required.")
+            return redirect("class_management")
+
+        try:
+            start_date = datetime.strptime(start, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end, "%Y-%m-%d").date()
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+            return redirect("class_management")
+
+        if end_date <= start_date:
+            messages.error(request, "End date must be after start date.")
+            return redirect("class_management")
+
+        if start_date < today:
+            messages.error(request, "Semester start date cannot be earlier than today.")
+            return redirect("class_management")
+
+        # ✅ If a semester exists and is ongoing → block unless editing
+        if current_semester and "confirm_edit" not in request.POST:
+            messages.error(request, "A semester is already active. Confirm edit to change it.")
+            return redirect("class_management")
+
+        # If editing, update existing; else create new
+        if current_semester and "confirm_edit" in request.POST:
+            current_semester.start_date = start_date
+            current_semester.end_date = end_date
+            current_semester.save()
+            messages.success(request, "Semester period updated successfully.")
+        else:
+            Semester.objects.all().delete()  # make sure only one exists
+            Semester.objects.create(start_date=start_date, end_date=end_date)
+            messages.success(request, "Semester period saved successfully.")
+
+        return redirect("class_management")
+
+    return render(request, "class_management.html", {"current_semester": current_semester})
 
 #para sa api ng django rest(web app - mob app connection)
 class AccountViewSet(viewsets.ModelViewSet):

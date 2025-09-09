@@ -59,7 +59,7 @@ class ClassSchedule(models.Model):
         limit_choices_to={'role': 'Instructor'},
         verbose_name="Professor"
     )
-    course_title = models.CharField(max_length=255, verbose_name="Course Title")
+    course_title = models.CharField(max_length=255, verbose_name="Course Title", blank=True, null=True)
     course_code = models.CharField(max_length=50, verbose_name="Course Code")
 
     course_section = models.ForeignKey(
@@ -133,3 +133,10 @@ class AttendanceRecord(models.Model):
 
     def __str__(self):
         return f"{self.date} - {self.student.user_id} - {self.status}"
+    
+class Semester(models.Model):
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    def __str__(self):
+        return f"{self.start_date} - {self.end_date}"

@@ -26,4 +26,5 @@ urlpatterns = [
     path('create_instructor', views.create_instructor, name='create_instructor'),
     path('api/', include(router.urls)),
     path('api/auth/login/', views.mobile_login, name='mobile_login'),
+    path("api/set_semester", views.set_semester, name="set_semester"),
 ]
