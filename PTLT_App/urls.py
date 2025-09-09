@@ -19,6 +19,7 @@ urlpatterns = [
     path('account_management/', views.account_management, name='account_management'),
     path('delete_account/<int:account_id>/', views.delete_account, name='delete_account'),
     path('update_account/<int:account_id>/', views.update_account, name='update_account'),
+    path("import_class_schedule/", views.import_class_schedule, name="import_class_schedule"),
     path('class_management', views.class_management, name='class_management'),
     path('update_class_schedule/<int:pk>/', views.update_class_schedule, name='update_class_schedule'),
     path('delete_class_schedule/<int:pk>/', views.delete_class_schedule, name='delete_class_schedule'),

@@ -21,6 +21,9 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 import datetime
+import csv
+import io
+import traceback
 from django.core.mail import send_mail
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -538,6 +541,89 @@ def update_account(request, account_id):
 
     return JsonResponse({'status': 'invalid_request'})
 
+def import_class_schedule(request):
+    print("⚡ Import request received")
+    print("Method:", request.method)
+    print("FILES:", request.FILES)
+    print("POST:", request.POST)
+    if request.method == "POST" and request.FILES.get("csv_file"):
+        file = request.FILES["csv_file"]
+        print(f"📂 Received file: {file.name}, size={file.size} bytes")
+        decoded_file = file.read().decode("utf-8").splitlines()
+        print(f"First line (header): {decoded_file[0] if decoded_file else 'EMPTY FILE'}")
+        reader = csv.DictReader(decoded_file)
+
+        for line_number, row in enumerate(reader, start=2):  # start=2 (because row 1 is header)
+            try:
+                print(f"\n[IMPORT] Processing line {line_number}: {row}")
+
+                # --- Check required fields ---
+                required_fields = ["course_code", "course_title", "course_section_id", 
+                                   "time_in", "time_out", "days", "grace_period", 
+                                   "student_count", "remote_device", "room_assignment"]
+
+                missing = [f for f in required_fields if not row.get(f)]
+                if missing:
+                    print(f"⚠️ Line {line_number}: Missing required fields: {missing}")
+                    continue  # Skip this row
+
+                # --- Professor lookup (optional) ---
+                professor = None
+                if row.get("professor_user_id"):
+                    professor = Account.objects.filter(
+                        user_id=row.get("professor_user_id"),
+                        role="Instructor"
+                    ).first()
+                    if not professor:
+                        print(f"⚠️ Line {line_number}: Professor with user_id '{row.get('professor_user_id')}' not found. Leaving as NULL.")
+
+                # --- Time validation ---
+                time_in = row.get("time_in")
+                time_out = row.get("time_out")
+                if time_in and time_out and time_out <= time_in:
+                    print(f"⚠️ Line {line_number}: Invalid time range (time_out <= time_in). Skipping row.")
+                    continue
+
+                # --- Grace period check ---
+                try:
+                    grace_period = int(row.get("grace_period", 0))
+                except ValueError:
+                    print(f"⚠️ Line {line_number}: Grace period is not a valid integer. Defaulting to 0.")
+                    grace_period = 0
+
+                # --- Student count check ---
+                try:
+                    student_count = int(row.get("student_count", 0))
+                except ValueError:
+                    print(f"⚠️ Line {line_number}: Student count is not a valid integer. Defaulting to 0.")
+                    student_count = 0
+
+                # --- Create Class Schedule ---
+                ClassSchedule.objects.create(
+                    professor=professor,
+                    course_title=row.get("course_title"),
+                    course_code=row.get("course_code"),
+                    course_section_id=row.get("course_section_id"),
+                    time_in=time_in,
+                    time_out=time_out,
+                    days=row.get("days"),
+                    grace_period=grace_period,
+                    student_count=student_count,
+                    remote_device=row.get("remote_device"),
+                    room_assignment=row.get("room_assignment"),
+                )
+
+                print(f"✅ Line {line_number}: Successfully imported {row.get('course_code')}")
+
+            except Exception as e:
+                print(f"❌ Line {line_number}: Unexpected error -> {e}")
+                traceback.print_exc()  # full error stacktrace in terminal
+                continue
+
+        print("❌ No file found or wrong method")
+        return JsonResponse({"status": "error", "message": "Invalid request (no file uploaded)."}, status=400)
+    
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
 def class_management(request):
     today = timezone.now().date()
     

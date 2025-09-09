@@ -126,4 +126,36 @@ document.addEventListener("DOMContentLoaded", function () {
         const token = document.querySelector('[name=csrfmiddlewaretoken]');
         return token ? token.value : '';
     }
+
+    const importBtn = document.getElementById("importClassBtn");
+    const fileInput = document.getElementById("fileInput");
+
+    if (importBtn && fileInput) {
+        importBtn.addEventListener("click", function () {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener("change", async function (event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("csv_file", file);
+
+            const response = await fetch("/import_class_schedule/", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCSRFToken()
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("CSV imported successfully!");
+                location.reload(); // Refresh to show new data
+            } else {
+                alert("Failed to import CSV.");
+            }
+        });
+    }
 });
