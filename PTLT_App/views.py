@@ -35,6 +35,11 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
+from rest_framework import serializers
+# Authentication endpoint for mobile
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+
 
 from .models import Account
 from .models import CourseSection
@@ -679,10 +684,14 @@ def set_semester(request):
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        """Allow read without auth, require auth for write operations"""
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def mobile_sync(self, request):
         """Sync accounts from mobile to web"""
         serializer = MobileAccountSerializer(data=request.data, many=True)
@@ -694,26 +703,32 @@ class AccountViewSet(viewsets.ModelViewSet):
 class ClassScheduleViewSet(viewsets.ModelViewSet):
     queryset = ClassSchedule.objects.all()
     serializer_class = ClassScheduleSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        """Allow read without auth, require auth for write operations"""
+        if self.action in ['list', 'retrieve', 'today_schedules']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     @action(detail=False, methods=['get'])
     def today_schedules(self, request):
         """Get today's schedules for mobile"""
         today = timezone.now().date()
-        schedules = ClassSchedule.objects.filter(
-            # Add your filtering logic based on days field
-        )
+        schedules = ClassSchedule.objects.all()  # Add your filter logic
         serializer = self.get_serializer(schedules, many=True)
         return Response(serializer.data)
 
 class AttendanceRecordViewSet(viewsets.ModelViewSet):
     queryset = AttendanceRecord.objects.all()
     serializer_class = AttendanceRecordSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        """Allow read without auth, require auth for write operations"""
+        if self.action in ['list', 'retrieve', 'download_for_mobile']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def mobile_upload(self, request):
         """Upload attendance records from mobile"""
         serializer = MobileAttendanceSerializer(data=request.data, many=True)
@@ -737,10 +752,6 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         
         serializer = MobileAttendanceSerializer(records, many=True)
         return Response(serializer.data)
-
-# Authentication endpoint for mobile
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

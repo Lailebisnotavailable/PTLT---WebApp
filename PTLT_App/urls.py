@@ -4,9 +4,9 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
-router.register(r'accounts', views.AccountViewSet)
-router.register(r'schedules', views.ClassScheduleViewSet)
-router.register(r'attendance', views.AttendanceRecordViewSet)
+router.register(r'accounts', views.AccountViewSet, basename='account')
+router.register(r'class-schedules', views.ClassScheduleViewSet, basename='class-schedule')
+router.register(r'attendance-records', views.AttendanceRecordViewSet, basename='attendance-record')
 
 urlpatterns = [
     path('', views.login_view, name='login'),
@@ -24,7 +24,6 @@ urlpatterns = [
     path('delete_class_schedule/<int:pk>/', views.delete_class_schedule, name='delete_class_schedule'),
     path('attendance_report_template', views.attendance_report_template, name='attendance_report_template'),
     path('create_instructor', views.create_instructor, name='create_instructor'),
-    path('api/', include(router.urls)),
     path('api/auth/login/', views.mobile_login, name='mobile_login'),
     path("api/set_semester", views.set_semester, name="set_semester"),
-]
+] + router.urls 
