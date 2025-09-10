@@ -24,7 +24,7 @@ class Account(models.Model):
         choices=[('Admin', 'Admin'), ('Instructor', 'Instructor'), ('Student', 'Student')],
         verbose_name="Role"
     )
-    password = models.CharField(max_length=255, verbose_name="Password")
+    password = models.CharField(max_length=255, verbose_name="Password", null=True)
     sex = models.CharField(
         max_length=10,
         choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')],

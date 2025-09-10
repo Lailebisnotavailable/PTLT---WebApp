@@ -18,6 +18,7 @@ from datetime import time, timedelta
 from django.views.decorators.http import require_POST
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 import datetime
@@ -39,6 +40,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework import serializers
+from django.contrib.auth.hashers import make_password
 # Authentication endpoint for mobile
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -80,7 +82,7 @@ def login_view(request):
                 'first_name': 'Admin',
                 'last_name': 'User',
                 'role': 'Admin',
-                'password': 'admin',  # Plaintext; will be hashed
+                'password': 'admin',
                 'sex': 'Other',
                 'status': 'Active'
             },
@@ -106,37 +108,44 @@ def login_view(request):
                 last_name=acc['last_name']
             )
 
-            # Save also to your custom Account model
+            # Save also to your custom Account model (no password needed here)
             Account.objects.create(
                 user_id=acc['user_id'],
                 email=acc['email'],
                 first_name=acc['first_name'],
                 last_name=acc['last_name'],
                 role=acc['role'],
-                password=acc['password'],  # Store plaintext or hash? Up to you, but it's safer to hash
+                password=None,  # Let Django User handle passwords
                 sex=acc['sex'],
                 status=acc['status'],
                 course_section=None
             )
+    
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
 
         try:
-            # Find the User with this email
-            user_obj = User.objects.get(email=email)
-
-            # Now authenticate using the username (which is user_id or custom set)
-            user = authenticate(request, username=user_obj.username, password=password)
-
-            if user is not None:
-                login(request, user)  # Start session
-
-                try:
-                    # Match the custom Account model by email
-                    account = Account.objects.get(email=email)
-
-                    # Store session details
+            # First check if this is a temporary password login
+            account = Account.objects.get(email=email)
+            
+            # Check if user has Django User account
+            try:
+                user_obj = User.objects.get(email=email)
+                # Try normal authentication first
+                user = authenticate(request, username=user_obj.username, password=password)
+                
+                if user is not None:
+                    # Check if password is the temporary "00000"
+                    if password == "00000":
+                        # Store user info in session for password change
+                        request.session['temp_user_id'] = account.user_id
+                        request.session['temp_email'] = email
+                        messages.info(request, "You must change your password before continuing.")
+                        return redirect('force_password_change')
+                    
+                    # Normal login
+                    login(request, user)
                     request.session['user_id'] = account.user_id
                     request.session['role'] = account.role
 
@@ -148,22 +157,94 @@ def login_view(request):
                     else:
                         messages.error(request, "Unknown user role.")
                         return redirect('login')
-
-                except Account.DoesNotExist:
-                    messages.error(request, "Custom account not found.")
-                    print("Account lookup failed")
+                
+            except User.DoesNotExist:
+                # No Django User exists, but Account exists with temp password
+                if password == "00000":
+                    # Store account info for password setup
+                    request.session['temp_user_id'] = account.user_id
+                    request.session['temp_email'] = email
+                    messages.info(request, "Please set up your password to continue.")
+                    return redirect('force_password_change')
+                else:
+                    messages.error(request, "Account not fully set up. Please contact administrator.")
                     return redirect('login')
-            else:
-                messages.error(request, "Invalid credentials.")
-                print("Auth failed")
-                return redirect('login')
+            
+            messages.error(request, "Invalid credentials.")
+            return redirect('login')
 
-        except User.DoesNotExist:
-            messages.error(request, "No user with that email.")
-            print("User email not found")
+        except Account.DoesNotExist:
+            messages.error(request, "No account found with that email.")
             return redirect('login')
         
     return render(request, 'login.html')
+
+
+def force_password_change(request):
+    # Check if user came from login with temp password
+    if 'temp_user_id' not in request.session:
+        messages.error(request, "Unauthorized access.")
+        return redirect('login')
+    
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        if new_password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return render(request, 'force_password_change.html')
+        
+        if len(new_password) < 6:  # Add your password requirements
+            messages.error(request, "Password must be at least 6 characters long.")
+            return render(request, 'force_password_change.html')
+        
+        try:
+            user_id = request.session['temp_user_id']
+            email = request.session['temp_email']
+            account = Account.objects.get(user_id=user_id, email=email)
+            
+            # Create or update Django User
+            try:
+                user_obj = User.objects.get(email=email)
+                # Update existing user password
+                user_obj.set_password(new_password)
+                user_obj.save()
+            except User.DoesNotExist:
+                # Create new Django User
+                user_obj = User.objects.create_user(
+                    username=account.user_id,
+                    email=account.email,
+                    password=new_password,
+                    first_name=account.first_name,
+                    last_name=account.last_name
+                )
+            
+            # Clear temporary session data
+            del request.session['temp_user_id']
+            del request.session['temp_email']
+            
+            # Auto-login the user
+            user = authenticate(request, username=user_obj.username, password=new_password)
+            if user:
+                login(request, user)
+                request.session['user_id'] = account.user_id
+                request.session['role'] = account.role
+                
+                messages.success(request, "Password updated successfully!")
+                
+                # Redirect based on role
+                if account.role == 'Admin':
+                    return redirect('account_management')
+                elif account.role == 'Instructor':
+                    return redirect('schedule')
+                else:
+                    return redirect('login')
+            
+        except Account.DoesNotExist:
+            messages.error(request, "Account not found.")
+            return redirect('login')
+    
+    return render(request, 'force_password_change.html')
 
 def logout_view(request):
     logout(request)  # Destroys session and logs out user
