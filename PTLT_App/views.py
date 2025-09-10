@@ -540,90 +540,105 @@ def update_account(request, account_id):
             return JsonResponse({'status': 'error', 'message': str(e)})
 
     return JsonResponse({'status': 'invalid_request'})
+import csv
+import io
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import Account, ClassSchedule, CourseSection
 
+@csrf_exempt
 def import_class_schedule(request):
     print("⚡ Import request received")
     print("Method:", request.method)
     print("FILES:", request.FILES)
     print("POST:", request.POST)
-    if request.method == "POST" and request.FILES.get("csv_file"):
-        file = request.FILES["csv_file"]
-        print(f"📂 Received file: {file.name}, size={file.size} bytes")
-        decoded_file = file.read().decode("utf-8").splitlines()
-        print(f"First line (header): {decoded_file[0] if decoded_file else 'EMPTY FILE'}")
-        reader = csv.DictReader(decoded_file)
 
-        for line_number, row in enumerate(reader, start=2):  # start=2 (because row 1 is header)
-            try:
-                print(f"\n[IMPORT] Processing line {line_number}: {row}")
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Only POST method allowed."}, status=400)
 
-                # --- Check required fields ---
-                required_fields = ["course_code", "course_title", "course_section_id", 
-                                   "time_in", "time_out", "days", "grace_period", 
-                                   "student_count", "remote_device", "room_assignment"]
+    if "csv_file" not in request.FILES:
+        return JsonResponse({"status": "error", "message": "No CSV file uploaded."}, status=400)
 
-                missing = [f for f in required_fields if not row.get(f)]
-                if missing:
-                    print(f"⚠️ Line {line_number}: Missing required fields: {missing}")
-                    continue  # Skip this row
+    csv_file = request.FILES["csv_file"]
+    print(f"📂 Received file: {csv_file.name}, size={csv_file.size} bytes")
 
-                # --- Professor lookup (optional) ---
-                professor = None
-                if row.get("professor_user_id"):
-                    professor = Account.objects.filter(
-                        user_id=row.get("professor_user_id"),
-                        role="Instructor"
-                    ).first()
-                    if not professor:
-                        print(f"⚠️ Line {line_number}: Professor with user_id '{row.get('professor_user_id')}' not found. Leaving as NULL.")
+    try:
+        data = csv_file.read().decode("utf-8")
+        io_string = io.StringIO(data)
+        reader = csv.DictReader(io_string)
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": f"Failed to read CSV: {e}"}, status=400)
 
-                # --- Time validation ---
-                time_in = row.get("time_in")
-                time_out = row.get("time_out")
-                if time_in and time_out and time_out <= time_in:
-                    print(f"⚠️ Line {line_number}: Invalid time range (time_out <= time_in). Skipping row.")
-                    continue
+    results = {
+        "imported": 0,
+        "skipped": 0,
+        "errors": []
+    }
 
-                # --- Grace period check ---
-                try:
-                    grace_period = int(row.get("grace_period", 0))
-                except ValueError:
-                    print(f"⚠️ Line {line_number}: Grace period is not a valid integer. Defaulting to 0.")
-                    grace_period = 0
+    line_num = 1  # header = line 1
+    for row in reader:
+        line_num += 1
+        print(f"[IMPORT] Processing line {line_num}: {row}")
 
-                # --- Student count check ---
-                try:
-                    student_count = int(row.get("student_count", 0))
-                except ValueError:
-                    print(f"⚠️ Line {line_number}: Student count is not a valid integer. Defaulting to 0.")
-                    student_count = 0
+        prof_user_id = row.get("professor_user_id")
+        professor = None
+        if prof_user_id:
+            professor = Account.objects.filter(user_id=prof_user_id, role="Instructor").first()
 
-                # --- Create Class Schedule ---
-                ClassSchedule.objects.create(
-                    professor=professor,
-                    course_title=row.get("course_title"),
-                    course_code=row.get("course_code"),
-                    course_section_id=row.get("course_section_id"),
-                    time_in=time_in,
-                    time_out=time_out,
-                    days=row.get("days"),
-                    grace_period=grace_period,
-                    student_count=student_count,
-                    remote_device=row.get("remote_device"),
-                    room_assignment=row.get("room_assignment"),
-                )
+        if not professor:
+            msg = f"Line {line_num}: Professor with user_id '{prof_user_id}' not found in accounts."
+            print("❌", msg)
+            results["skipped"] += 1
+            results["errors"].append(msg)
+            continue
 
-                print(f"✅ Line {line_number}: Successfully imported {row.get('course_code')}")
+        section_id = row.get("course_section_id")
+        course_section = None
+        if section_id:
+            course_section = CourseSection.objects.filter(id=section_id).first()
 
-            except Exception as e:
-                print(f"❌ Line {line_number}: Unexpected error -> {e}")
-                traceback.print_exc()  # full error stacktrace in terminal
-                continue
+        if not course_section:
+            msg = f"Line {line_num}: Section '{section_id}' not found in CourseSection."
+            print("❌", msg)
+            results["skipped"] += 1
+            results["errors"].append(msg)
+            continue
 
-        print("❌ No file found or wrong method")
-        return JsonResponse({"status": "error", "message": "Invalid request (no file uploaded)."}, status=400)
-    
-    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+        try:
+            ClassSchedule.objects.create(
+                professor=professor,
+                course_title=row.get("course_title"),
+                course_code=row.get("course_code"),
+                course_section=course_section,
+                time_in=row.get("time_in"),
+                time_out=row.get("time_out"),
+                days=row.get("days"),
+                grace_period=row.get("grace_period") or 0,
+                student_count=row.get("student_count") or 0,
+                remote_device=row.get("remote_device"),
+                room_assignment=row.get("room_assignment"),
+            )
+            results["imported"] += 1
+            print(f"✅ Line {line_num}: Schedule imported successfully.")
+        except Exception as e:
+            msg = f"Line {line_num}: Failed to save schedule. Error: {str(e)}"
+            print("❌", msg)
+            results["skipped"] += 1
+            results["errors"].append(msg)
+
+    if results["imported"] == 0:
+        status = "failed"  # Nothing imported
+    elif results["skipped"] > 0:
+        status = "partial"  # Some succeeded, some failed
+    else:
+        status = "ok"  # Everything succeeded
+    return JsonResponse({
+        "status": status,
+        "imported": results["imported"],
+        "skipped": results["skipped"],
+        "errors": results["errors"],
+    })
+
 def class_management(request):
     today = timezone.now().date()
     
