@@ -1004,10 +1004,10 @@ def generate_attendance_docx_view(request, class_id):
         
         # Generate dates
         dates = []
-        base_date = datetime.date.today()
+        base_date = date.today()
         for i in range(8):
-            date = base_date + datetime.timedelta(days=i*2)
-            dates.append(date.strftime("%m/%d"))
+            new_date = base_date + timedelta(days=i*2)
+            dates.append(new_date.strftime("%m/%d"))
         
         # Context data
         context = {
@@ -1042,7 +1042,7 @@ def generate_attendance_docx_view(request, class_id):
             content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
         
-        filename = f"Attendance_{class_schedule.course_code}_{datetime.date.today().strftime('%Y%m%d')}.docx"
+        filename = f"Attendance_{class_schedule.course_code}_{base_date.strftime('%Y%m%d')}.docx"
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         return response
