@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect
 import json
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -57,6 +57,13 @@ from .serializers import (
     AccountSerializer, ClassScheduleSerializer, AttendanceRecordSerializer,
     MobileAccountSerializer, MobileAttendanceSerializer
 )
+
+# for docx file
+from docxtpl import DocxTemplate
+from io import BytesIO
+import os
+from django.conf import settings
+
 #para to sa schedule ni instructor
 PERIODS = [
     (time(9, 30), time(10, 20), "I"),
@@ -807,11 +814,12 @@ def delete_class_schedule(request, pk):
             return JsonResponse({"status": "error"}, status=400)
 
 def attendance_report_template(request):
-    return render(request, 'attendance_report_template.html')
-
-def attendance_report_template(request):
+    # Get class schedules for the dropdown
+    class_schedules = ClassSchedule.objects.all()
+    
     context = {
-        'rows': range(1, 41)  # This creates numbers 1-40
+        'rows': range(1, 41),  # This creates numbers 1-40
+        'class_schedules': class_schedules
     }
     return render(request, 'attendance_report_template.html', context)
 
@@ -953,3 +961,91 @@ def mobile_login(request):
             })
     
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+# for docx file
+def generate_attendance_docx_view(request, class_id):
+    """
+    Generate attendance template as .docx file
+    """
+    try:
+        # Path to your template file
+        template_path = os.path.join(settings.BASE_DIR, 'PTLT_App', 'templates', 'attendance_template.docx')
+        
+        # Load the template
+        doc = DocxTemplate(template_path)
+        
+        # Get class schedule data
+        class_schedule = get_object_or_404(ClassSchedule, id=class_id)
+        
+        # Get students for this class
+        students = Account.objects.filter(
+            course_section=class_schedule.course_section, 
+            role='Student'
+        ).order_by('last_name', 'first_name')
+        
+        # Prepare student data
+        students_data = []
+        for student in students:
+            student_data = {
+                'full_name': f"{student.last_name}, {student.first_name}",
+                'sex': student.sex,
+                'attendance': {
+                    'time1': '',
+                    'time2': '',
+                    'time3': '',
+                    'time4': '',
+                    'time5': '',
+                    'time6': '',
+                    'time7': '',
+                    'time8': '',
+                }
+            }
+            students_data.append(student_data)
+        
+        # Generate dates
+        dates = []
+        base_date = datetime.date.today()
+        for i in range(8):
+            date = base_date + datetime.timedelta(days=i*2)
+            dates.append(date.strftime("%m/%d"))
+        
+        # Context data
+        context = {
+            'subject': class_schedule.course_title,
+            'faculty_name': f"{class_schedule.professor.first_name} {class_schedule.professor.last_name}" if class_schedule.professor else '',
+            'course': class_schedule.course_section.course_name if class_schedule.course_section else '',
+            'room_assignment': class_schedule.room_assignment,
+            'year_section': class_schedule.course_section.course_section if class_schedule.course_section else '',
+            'schedule': f"{class_schedule.days} {class_schedule.time_in}-{class_schedule.time_out}",
+            'date1': dates[0],
+            'date2': dates[1],
+            'date3': dates[2],
+            'date4': dates[3],
+            'date5': dates[4],
+            'date6': dates[5],
+            'date7': dates[6],
+            'date8': dates[7],
+            'students': students_data
+        }
+        
+        # Render the template
+        doc.render(context)
+        
+        # Save to memory
+        file_stream = BytesIO()
+        doc.save(file_stream)
+        file_stream.seek(0)
+        
+        # Create response
+        response = HttpResponse(
+            file_stream.read(),
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        
+        filename = f"Attendance_{class_schedule.course_code}_{datetime.date.today().strftime('%Y%m%d')}.docx"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Exception as e:
+        return HttpResponse(f"Error generating document: {str(e)}", status=500)

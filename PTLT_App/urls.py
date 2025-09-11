@@ -28,4 +28,5 @@ urlpatterns = [
     path('api/auth/login/', views.mobile_login, name='mobile_login'),
     path("api/set_semester", views.set_semester, name="set_semester"),
     path('force-password-change/', views.force_password_change, name='force_password_change'),
+    path('attendance/docx/<int:class_id>/', views.generate_attendance_docx_view, name='generate_attendance_docx'),
 ] + router.urls 

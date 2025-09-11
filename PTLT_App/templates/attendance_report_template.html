@@ -21,7 +21,16 @@
             <strong class="pe-3 me-3 fs-5 ptlt no-print">Document Plotter</strong>
         </div>
         <div class="d-flex align-items-center d-print-none">
-            <button class="btn btn-sm btn-red me-2 " onclick="exportToPDF()">Export</button>
+            <!-- Class Selection Dropdown -->
+            <select id="classSelect" class="form-select me-2" style="width: 250px;">
+                <option value="">Select a class...</option>
+                {% for schedule in class_schedules %}
+                <option value="{{ schedule.id }}">{{ schedule.course_title }} - {{ schedule.course_section.course_section }}</option>
+                {% endfor %}
+            </select>
+            
+            <button class="btn btn-sm btn-success me-2" onclick="downloadDocx()">Download DOCX</button>
+            <button class="btn btn-sm btn-red me-2" onclick="exportToPDF()">Export PDF</button>
             <button class="btn btn-sm btn-red me-2" onclick="window.print()">Print</button>
         </div>
     </div>
@@ -112,6 +121,7 @@
                 </tbody>
             </table>
         </div>
+        
         <!-- Pagination -->
         <div class="d-flex justify-content-between align-items-center mt-3 d-print-none">
             <span>Showing 1–3 of 3 results</span>
@@ -143,9 +153,28 @@
             pagebreak:    { mode: ['avoid-all'] }
         };
         html2pdf().set(opt).from(element).save();
-    
     }
     
+    function downloadDocx() {
+        const classSelect = document.getElementById('classSelect');
+        const selectedClassId = classSelect.value;
+        
+        if (!selectedClassId) {
+            alert('Please select a class first!');
+            return;
+        }
+        
+        // Create the download URL
+        const downloadUrl = `/attendance/docx/${selectedClassId}/`;
+        
+        // Create a temporary link and click it to download
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 </script>
 
 </body>
