@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-c(sj)ii%9f+e!gji&85p_-b0n^%at&d4qm=n1jk8r(yb%5)5oz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.18.28']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.18.28', '192.168.1.8']
 
 
 # Application definition
@@ -157,6 +157,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",  # Your mobile app testing
     "http://127.0.0.1:8080",
     "http://192.168.18.28:8080",
+    "http://192.168.1.8:8080"
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
