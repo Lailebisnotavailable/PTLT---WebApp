@@ -984,25 +984,6 @@ def generate_attendance_docx_view(request, class_id):
             role='Student'
         ).order_by('last_name', 'first_name')
         
-        # Prepare student data
-        students_data = []
-        for student in students:
-            student_data = {
-                'full_name': f"{student.last_name}, {student.first_name}",
-                'sex': student.sex,
-                'attendance': {
-                    'time1': '',
-                    'time2': '',
-                    'time3': '',
-                    'time4': '',
-                    'time5': '',
-                    'time6': '',
-                    'time7': '',
-                    'time8': '',
-                }
-            }
-            students_data.append(student_data)
-        
         # Generate dates
         dates = []
         base_date = date.today()
@@ -1010,24 +991,38 @@ def generate_attendance_docx_view(request, class_id):
             new_date = base_date + timedelta(days=i*2)
             dates.append(new_date.strftime("%m/%d"))
         
-        # Context data
         context = {
-            'subject': class_schedule.course_title,
-            'faculty_name': f"{class_schedule.professor.first_name} {class_schedule.professor.last_name}" if class_schedule.professor else '',
-            'course': class_schedule.course_section.course_name if class_schedule.course_section else '',
-            'room_assignment': class_schedule.room_assignment,
-            'year_section': class_schedule.course_section.course_section if class_schedule.course_section else '',
-            'schedule': f"{class_schedule.days} {class_schedule.time_in}-{class_schedule.time_out}",
-            'date1': dates[0],
-            'date2': dates[1],
-            'date3': dates[2],
-            'date4': dates[3],
-            'date5': dates[4],
-            'date6': dates[5],
-            'date7': dates[6],
-            'date8': dates[7],
-            'students': students_data
-        }
+                        'subject': class_schedule.course_title,
+                        'faculty_name': f"{class_schedule.professor.first_name} {class_schedule.professor.last_name}" if class_schedule.professor else '',
+                        'course': class_schedule.course_section.course_name if class_schedule.course_section else '',
+                        'room_assignment': class_schedule.room_assignment,
+                        'year_section': class_schedule.course_section.course_section if class_schedule.course_section else '',
+                        'schedule': f"{class_schedule.days} {class_schedule.time_in}-{class_schedule.time_out}",
+                        'date1': dates[0],
+                        'date2': dates[1],
+                        'date3': dates[2],
+                        'date4': dates[3],
+                        'date5': dates[4],
+                        'date6': dates[5],
+                        'date7': dates[6],
+                        'date8': dates[7],
+                    }
+
+        # Add individual student data for up to 40 students
+        for i, student in enumerate(students[:40]):  # Limit to first 40 students
+            context[f'student{i+1}_name'] = f"{student.last_name}, {student.first_name}"
+            context[f'student{i+1}_sex'] = student.sex
+            
+            # Add empty time slots for now
+            for j in range(1, 9):
+                context[f'student{i+1}_time{j}'] = ''
+
+        # Fill remaining slots with empty strings if fewer than 40 students
+        for i in range(len(students), 40):
+            context[f'student{i+1}_name'] = ''
+            context[f'student{i+1}_sex'] = ''
+            for j in range(1, 9):
+                context[f'student{i+1}_time{j}'] = ''                    
         
         # Render the template
         doc.render(context)
