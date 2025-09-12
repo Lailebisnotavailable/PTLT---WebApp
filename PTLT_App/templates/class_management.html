@@ -26,36 +26,46 @@
 
             <button id="importClassBtn" class="btn btn-primary">Import Class</button>
             <input type="file" id="fileInput" accept=".csv" style="display:none">
-            {% if active_semester %}
+
+            {% if messages %}
+                {% for message in messages %}
+                    {% if "semester" in message.tags %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            {% if current_semester %}
                 <!-- Display mode -->
                 <div id="semester-display">
-                    <p><strong>Start Date:</strong> {{ active_semester.start_date }}</p>
-                    <p><strong>End Date:</strong> {{ active_semester.end_date }}</p>
+                    <p><strong>Start Date:</strong> {{ current_semester.start_date }}</p>
+                    <p><strong>End Date:</strong> {{ current_semester.end_date }}</p>
                     <button type="button" id="edit-btn" class="btn btn-warning">Edit Semester</button>
                 </div>
 
-                <!-- Edit mode (hidden until button is clicked) -->
+                <!-- Hidden edit form -->
                 <form id="semester-form" method="POST" action="{% url 'set_semester' %}" style="display:none;">
                     {% csrf_token %}
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="form-label">Start Date:</label>
                             <input type="date" class="form-control" name="semester_start"
-                                value="{{ active_semester.start_date|date:'Y-m-d' }}">
+                                value="{{ current_semester.start_date|date:'Y-m-d' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">End Date:</label>
                             <input type="date" class="form-control" name="semester_end"
-                                value="{{ active_semester.end_date|date:'Y-m-d' }}">
+                                value="{{ current_semester.end_date|date:'Y-m-d' }}">
                         </div>
                     </div>
                     <button type="submit" class="btn btn-success">Save Semester</button>
-                    <!-- Added button at the top -->
-                    
-
+                    <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
                 </form>
             {% else %}
-                <!-- No semester yet, show normal form -->
+                <!-- No active semester: show normal form -->
                 <form method="POST" action="{% url 'set_semester' %}">
                     {% csrf_token %}
                     <div class="row g-3 mb-4">
@@ -178,11 +188,19 @@ document.addEventListener("DOMContentLoaded", function() {
     const editBtn = document.getElementById("edit-btn");
     const form = document.getElementById("semester-form");
     const display = document.getElementById("semester-display");
+    const cancelBtn = document.getElementById("cancel-btn");
 
-    if (editBtn) {
+    if (editBtn && form && display) {
         editBtn.addEventListener("click", function() {
             display.style.display = "none";
             form.style.display = "block";
+        });
+    }
+
+    if (cancelBtn && form && display) {
+        cancelBtn.addEventListener("click", function() {
+            form.style.display = "none";
+            display.style.display = "block";
         });
     }
 });
