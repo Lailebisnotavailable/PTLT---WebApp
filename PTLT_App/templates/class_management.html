@@ -26,7 +26,9 @@
 
             <button id="importClassBtn" class="btn btn-primary">Import Class</button>
             <input type="file" id="fileInput" accept=".csv" style="display:none">
-
+            
+            
+            <button id="syncToMobileBtn" class="btn btn-success ms-2">Sync to Mobile App</button>
             {% if messages %}
                 {% for message in messages %}
                     {% if "semester" in message.tags %}
@@ -100,15 +102,15 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Course Description:</label>
-                    <input type="text" class="form-control" name="course_description">
+                    <input type="text" class="form-control" name="course_name">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Start Time:</label>
-                    <input type="time" class="form-control" id="start_time" name="start_time">
+                    <input type="time" class="form-control" id="time_in" name="time_in">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Finish Time:</label>
-                    <input type="time" class="form-control" id="finish_time" name="finish_time">
+                    <input type="time" class="form-control" id="time_out" name="time_out">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Day:</label>
@@ -123,7 +125,7 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Program & Section:</label>
-                    <select class="form-select" name="program_section">
+                    <select class="form-select" name="course_section">
                         {% for section in course_sections %}
                             <option value="{{ section.course_section }}">{{ section.course_section }}</option>
                         {% endfor %}

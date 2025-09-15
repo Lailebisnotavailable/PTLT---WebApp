@@ -34,3 +34,8 @@ class MobileAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttendanceRecord
         fields = ['id', 'date', 'class_schedule', 'student', 'time_in', 'time_out', 'status']
+
+class MobileAttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AttendanceRecord
+        fields = ['id', 'date', 'class_schedule', 'professor', 'student', 'course_section', 'time_in', 'time_out', 'fingerprint_data', 'status']

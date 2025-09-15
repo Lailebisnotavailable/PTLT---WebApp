@@ -881,7 +881,20 @@ class AccountViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         return [IsAuthenticated()]
-
+    
+    def create(self, request, *args, **kwargs):
+        """Override create to add debugging"""
+        print("=== DEBUG: Incoming account data ===")
+        print("Request data:", request.data)
+        print("Request headers:", dict(request.headers))
+        
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            print("=== DEBUG: Validation errors ===")
+            print("Serializer errors:", serializer.errors)
+            return Response(serializer.errors, status=400)
+        
+        return super().create(request, *args, **kwargs) 
     def perform_create(self, serializer):
         """Add audit trail for account creation"""
         account = serializer.save()
@@ -935,7 +948,9 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             serializer.save()
             return Response({'status': 'success', 'count': len(serializer.data)})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            print("Validation errors:", serializer.errors)  # Debug print
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def download_for_mobile(self, request):

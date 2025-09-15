@@ -42,7 +42,7 @@ class Account(models.Model):
     )
 
     # New fields moved over from FingerprintRegistration
-    fingerprint_template = models.BinaryField(null=True, blank=True, verbose_name="Fingerprint Template")
+    fingerprint_template = models.TextField(null=True, blank=True, verbose_name="Fingerprint Template")
     date_registered = models.DateTimeField(default=timezone.now, verbose_name="Date of Registration")
 
     def __str__(self):
