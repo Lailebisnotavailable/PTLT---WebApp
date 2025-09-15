@@ -19,6 +19,7 @@ urlpatterns = [
     path('attendance_report_template', views.attendance_report_template, name='attendance_report_template'),
     path('create_instructor', views.create_instructor, name='create_instructor'),
     path("set_semester", views.set_semester, name="set_semester"),  # Keep this one
+    path('auth/mobile/', views.mobile_auth, name='mobile_auth'), 
     path('force-password-change/', views.force_password_change, name='force_password_change'),
     path('attendance/docx/<int:class_id>/', views.generate_attendance_docx_view, name='generate_attendance_docx'),
 ]

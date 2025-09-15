@@ -877,17 +877,26 @@ class AccountViewSet(viewsets.ModelViewSet):
     serializer_class = AccountSerializer
     
     def get_permissions(self):
-        """Allow read without auth, require auth for write operations"""
+        """Require authentication for write operations"""
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         return [IsAuthenticated()]
 
+    def perform_create(self, serializer):
+        """Add audit trail for account creation"""
+        account = serializer.save()
+        
+        # Log who created this account
+        if self.request.user.username == 'mobile_system':
+            print(f"Account {account.user_id} created via mobile upload")
+        else:
+            print(f"Account {account.user_id} created by user {self.request.user.username}")
+        
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def mobile_sync(self, request):
         """Sync accounts from mobile to web"""
         serializer = MobileAccountSerializer(data=request.data, many=True)
         if serializer.is_valid():
-            # Handle sync logic here
             return Response({'status': 'success'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1045,3 +1054,34 @@ def generate_attendance_docx_view(request, class_id):
         
     except Exception as e:
         return HttpResponse(f"Error generating document: {str(e)}", status=500)
+    
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def mobile_auth(request): #para to sa 
+    """Authentication endpoint for mobile devices"""
+    device_id = request.data.get('device_id')
+    device_secret = request.data.get('device_secret')
+    
+    # You can store these in Django settings or environment variables
+    VALID_DEVICES = {
+        'FINGERPRINT_DEVICE_001': 'Room1_Debug_2025', 
+        # Add more devices as needed
+    }
+    
+    if device_id in VALID_DEVICES and VALID_DEVICES[device_id] == device_secret:
+        # Create or get a system user for mobile uploads
+        user, created = User.objects.get_or_create(
+            username='mobile_system',
+            defaults={'email': 'mobile@system.local', 'is_active': True}
+        )
+        
+        # Create or get token for this user
+        token, created = Token.objects.get_or_create(user=user)
+        
+        return Response({
+            'token': token.key,
+            'expires_in': 86400,  # 24 hours
+            'device_id': device_id
+        })
+    
+    return Response({'error': 'Invalid device credentials'}, status=401)    
