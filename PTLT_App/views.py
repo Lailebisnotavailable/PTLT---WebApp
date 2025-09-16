@@ -44,7 +44,7 @@ from django.contrib.auth.hashers import make_password
 # Authentication endpoint for mobile
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
-
+from .serializers import MobileClassScheduleSerializer
 
 from .models import Account
 from .models import CourseSection
@@ -927,8 +927,9 @@ class ClassScheduleViewSet(viewsets.ModelViewSet):
     def today_schedules(self, request):
         """Get today's schedules for mobile"""
         today = timezone.now().date()
-        schedules = ClassSchedule.objects.all()  # Add your filter logic
-        serializer = self.get_serializer(schedules, many=True)
+        schedules = ClassSchedule.objects.all()
+        # ✅ Make sure this line uses MobileClassScheduleSerializer
+        serializer = MobileClassScheduleSerializer(schedules, many=True)
         return Response(serializer.data)
 
 class AttendanceRecordViewSet(viewsets.ModelViewSet):

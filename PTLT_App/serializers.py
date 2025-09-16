@@ -29,11 +29,15 @@ class MobileAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = ['user_id', 'email', 'first_name', 'last_name', 'role', 'sex', 'status']
-
-class MobileAttendanceSerializer(serializers.ModelSerializer):
+        
+class MobileClassScheduleSerializer(serializers.ModelSerializer):
+    professor_user_id = serializers.CharField(source='professor.user_id', read_only=True)
+    
     class Meta:
-        model = AttendanceRecord
-        fields = ['id', 'date', 'class_schedule', 'student', 'time_in', 'time_out', 'status']
+        model = ClassSchedule
+        fields = ['id', 'course_title', 'course_code', 'course_section', 'time_in', 'time_out', 
+                 'days', 'grace_period', 'student_count', 'remote_device', 'room_assignment', 
+                 'professor_user_id']
 class MobileAttendanceSerializer(serializers.ModelSerializer):
     # Override these fields to accept user_id strings instead of primary keys
     student = serializers.CharField()
