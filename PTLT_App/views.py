@@ -944,13 +944,21 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def mobile_upload(self, request):
         """Upload attendance records from mobile"""
+        # Explicitly use MobileAttendanceSerializer (which has the user_id lookup logic)
         serializer = MobileAttendanceSerializer(data=request.data, many=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response({'status': 'success', 'count': len(serializer.data)})
+            created_records = serializer.save()
+            return Response({
+                'status': 'success', 
+                'count': len(created_records),
+                'message': f'Successfully uploaded {len(created_records)} attendance records'
+            })
         else:
             print("Validation errors:", serializer.errors)  # Debug print
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'status': 'error',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def download_for_mobile(self, request):

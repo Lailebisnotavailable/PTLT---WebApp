@@ -34,8 +34,40 @@ class MobileAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttendanceRecord
         fields = ['id', 'date', 'class_schedule', 'student', 'time_in', 'time_out', 'status']
-
 class MobileAttendanceSerializer(serializers.ModelSerializer):
+    # Override these fields to accept user_id strings instead of primary keys
+    student = serializers.CharField()
+    professor = serializers.CharField()
+    
     class Meta:
         model = AttendanceRecord
         fields = ['id', 'date', 'class_schedule', 'professor', 'student', 'course_section', 'time_in', 'time_out', 'fingerprint_data', 'status']
+    
+    def create(self, validated_data):
+        # Extract user_id strings
+        student_user_id = validated_data.pop('student')
+        professor_user_id = validated_data.pop('professor')
+        
+        try:
+            # Look up actual Account objects by user_id
+            student = Account.objects.get(user_id=student_user_id)
+            professor = Account.objects.get(user_id=professor_user_id)
+        except Account.DoesNotExist as e:
+            raise serializers.ValidationError({
+                'error': f'Account not found with user_id: {e}'
+            })
+        
+        # Create attendance record with actual Account objects
+        attendance = AttendanceRecord.objects.create(
+            student=student,
+            professor=professor,
+            **validated_data
+        )
+        return attendance
+    
+    def to_representation(self, instance):
+        # When returning data, convert back to user_id strings
+        representation = super().to_representation(instance)
+        representation['student'] = instance.student.user_id
+        representation['professor'] = instance.professor.user_id
+        return representation
