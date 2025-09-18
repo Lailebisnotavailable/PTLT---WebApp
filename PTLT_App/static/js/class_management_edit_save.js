@@ -5,6 +5,20 @@
         const instructorsData = JSON.parse(document.getElementById("instructor-list").textContent);
         const professors = instructorsData.map(i => `${i.first_name.trim()} ${i.last_name.trim()}`);
 
+        const createSubjectForm = document.getElementById("createSubjectForm");
+        if (createSubjectForm) {
+            createSubjectForm.addEventListener("submit", function(e) {
+                const timeIn = document.getElementById("time_in").value;
+                const timeOut = document.getElementById("time_out").value;
+
+                if (timeOut <= timeIn) {
+                    e.preventDefault(); // stop submission
+                    alert("Time Out must be later than Time In.");
+                }
+            });
+        }
+
+
          const syncToMobileBtn = document.getElementById("syncToMobileBtn");
         if (syncToMobileBtn) {
             syncToMobileBtn.addEventListener("click", function() {

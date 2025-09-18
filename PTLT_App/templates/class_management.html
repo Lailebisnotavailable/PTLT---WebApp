@@ -93,28 +93,28 @@
         <!-- Subject Creation Form -->
         <h3 class="mb-0 text-decoration-underline">Class Management</h3>
         <h3 class="mt-3 mb-4">Create Subject</h3>
-        <form method="POST">
+        <form id="createSubjectForm" method="POST">
             {% csrf_token %}
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
                     <label class="form-label">Course Code:</label>
-                    <input type="text" class="form-control" name="course_code">
+                    <input type="text" class="form-control" name="course_code" required>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Course Description:</label>
-                    <input type="text" class="form-control" name="course_name">
+                    <input type="text" class="form-control" name="course_name" required>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Start Time:</label>
-                    <input type="time" class="form-control" id="time_in" name="time_in">
+                    <input type="time" class="form-control" id="time_in" name="time_in" required>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Finish Time:</label>
-                    <input type="time" class="form-control" id="time_out" name="time_out">
+                    <input type="time" class="form-control" id="time_out" name="time_out" required>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Day:</label>
-                    <select class="form-select" name="day">
+                    <select class="form-select" name="day" required> 
                         <option value="">Select Day</option>
                         <option>Monday</option>
                         <option>Tuesday</option>
@@ -125,7 +125,7 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Program & Section:</label>
-                    <select class="form-select" name="course_section">
+                    <select class="form-select" name="course_section" required>
                         {% for section in course_sections %}
                             <option value="{{ section.course_section }}">{{ section.course_section }}</option>
                         {% endfor %}

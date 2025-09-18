@@ -108,8 +108,62 @@
   <div class="footer-bottom text-center mt-4">
     <p>&copy; 2025 PTLT | All Rights Reserved</p>
   </div>
+   <!-- Logout confirmation modal (add to admin_navbar.html and instructor_navbar.html) -->
+<div class="modal fade" id="confirmLogoutModal" tabindex="-1" aria-labelledby="confirmLogoutLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmLogoutLabel">Confirm Logout</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center text-dark">
+        <i class="fa fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+        <h5 class="fw-bold">Are you sure you want to logout?</h5>
+        <p class="text-muted">You will be redirected to the login page.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <!-- This button will trigger the logout when clicked (handled by JS below) -->
+        <button type="button" id="confirmLogoutBtn" class="btn btn-danger">Yes, Logout</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Find modal element
+  const modalEl = document.getElementById('confirmLogoutModal');
+  if (!modalEl) return; // nothing to do if modal missing
+
+  const bsModal = new bootstrap.Modal(modalEl, { keyboard: true, backdrop: 'static' });
+  let logoutHref = null;
+
+  // Attach click handler to any logout buttons/links
+  document.querySelectorAll('.logout_btn').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault(); // stop immediate navigation
+      logoutHref = btn.getAttribute('href'); // remember where to go
+      // optionally update modal text if you want per-button messaging:
+      // modalEl.querySelector('.modal-body p').textContent = 'Are you sure you want to logout, ' + userName + '?';
+      bsModal.show();
+    });
+  });
+
+  // Confirm button on modal — perform the redirect
+  const confirmBtn = modalEl.querySelector('#confirmLogoutBtn');
+  confirmBtn.addEventListener('click', function () {
+    if (logoutHref) {
+      // Use location.assign so back behavior is unchanged
+      window.location.assign(logoutHref);
+    } else {
+      bsModal.hide();
+    }
+  });
+});
+</script>
 </footer>
 
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
