@@ -1,5 +1,5 @@
     document.addEventListener("DOMContentLoaded", function () {
-        const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+        const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
         // Load instructors passed from Django template
         const instructorsData = JSON.parse(document.getElementById("instructor-list").textContent);
