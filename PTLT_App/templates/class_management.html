@@ -113,6 +113,15 @@
                     <input type="time" class="form-control" id="time_out" name="time_out" required>
                 </div>
                 <div class="col-md-4">
+                    <label class="form-label">Remote Device:</label>
+                    <select class="form-select" name="remote_device" required>
+                        <option value="">Select Device</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>ip
+                </div>
+                <div class="col-md-4">
                     <label class="form-label">Day:</label>
                     <select class="form-select" name="day" required> 
                         <option value="">Select Day</option>
@@ -148,6 +157,7 @@
                         <th>Time out</th>
                         <th>Day</th>
                         <th>Students</th>
+                        <th>Remote Device</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -163,6 +173,7 @@
                         <td class="timeout">{{ cls.time_out|time:"H:i" }}</td>
                         <td class="day">{{ cls.days }}</td>
                         <td>{{ cls.student_count }}</td>
+                        <td class="remote_device">{{ cls.remote_device }}</td>
                         <td>
                             <a href="#" class="btn btn-sm btn-outline-primary toggle-edit-btn">Edit</a>
                             <a href="#" class="btn btn-sm btn-outline-danger delete-btn">Delete</a>

@@ -745,6 +745,7 @@ def class_management(request):
         time_out = request.POST.get('time_out')
         day = request.POST.get('day')
         course_section_str = request.POST.get('course_section')
+        remote_device = request.POST.get('remote_device')
 
         try:
             section_obj = CourseSection.objects.get(course_section=course_section_str)
@@ -761,7 +762,7 @@ def class_management(request):
             professor=None,
             student_count=0,
             grace_period=0,
-            remote_device='-',
+            remote_device=remote_device,
             room_assignment='-',
         )
 
