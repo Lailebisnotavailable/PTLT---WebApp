@@ -10,4 +10,5 @@ router.register(r'attendance-records', views.AttendanceRecordViewSet, basename='
 urlpatterns = [
     path('auth/login/', views.mobile_login, name='mobile_login'),
     path('auth/mobile/', views.mobile_auth, name='mobile_auth'),
+    path('mobile-account-sync/', views.mobile_account_sync, name='api_mobile_account_sync'),
 ] + router.urls

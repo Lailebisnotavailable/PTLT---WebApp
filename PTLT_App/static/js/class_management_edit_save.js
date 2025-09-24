@@ -21,24 +21,48 @@
 
          const syncToMobileBtn = document.getElementById("syncToMobileBtn");
         if (syncToMobileBtn) {
-            syncToMobileBtn.addEventListener("click", function() {
+            syncToMobileBtn.addEventListener("click", async function() {
                 // Show loading state
                 syncToMobileBtn.disabled = true;
                 syncToMobileBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Preparing sync...';
                 
-                // Simple notification that schedules are ready for mobile sync
-                setTimeout(() => {
-                    alert('✅ Class schedules are now ready for mobile sync!\n\nOpen your mobile app to download the latest schedules automatically.');
+                try {
+                    // Get account and schedule counts
+                    const response = await fetch('/api/trigger-mobile-sync/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCSRFToken()
+                        }
+                    });
                     
-                    // Reset button
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        // Show detailed success message
+                        let message = '✅ Sync triggered successfully!\n\n';
+                        message += 'Master data now available for mobile download:\n';
+                        message += `• ${data.data.accounts_available} user accounts\n`;
+                        message += `• ${data.data.schedules_available} class schedules\n\n`;
+                        message += 'Mobile apps will:\n';
+                        message += '• Replace ALL mobile accounts with server data\n';
+                        message += '• Update class schedules\n\n';
+                        message += 'Open mobile app and press "Sync Now" to download!';
+                        
+                        alert(message);
+                    } else {
+                        alert('❌ Sync failed: ' + (data.message || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Sync error:', error);
+                    alert('❌ Sync failed: Network error');
+                } finally {
+                    // Reset button state
                     syncToMobileBtn.disabled = false;
                     syncToMobileBtn.innerHTML = 'Sync to Mobile App';
-                }, 1000);
-                
-                // Optional: You could add an actual API call here to mark schedules as "ready for sync"
-                // or trigger any server-side preparation needed
+                }
             });
-        }
+}
         // Toggle Edit/Save Button
         document.querySelectorAll('.toggle-edit-btn').forEach(button => {
             button.addEventListener('click', async function (e) {

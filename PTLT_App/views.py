@@ -6,6 +6,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import render_to_string
 from django.db.models import Q
+from django.views.decorators.http import require_http_methods   
 import json
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -913,7 +914,63 @@ class AccountViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             return Response({'status': 'success'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+#para sa web app to mob app account overwrite/syncing
+@csrf_exempt
+@require_http_methods(["GET"])
+def mobile_account_sync(request):
+    """API endpoint for mobile apps to fetch all accounts"""
+    try:
+        # Get all accounts from Django database
+        accounts = Account.objects.all()
+        
+        # Convert to list and format for mobile consumption
+        accounts_list = []
+        for account in accounts:
+            accounts_list.append({
+                'user_id': account.user_id,
+                'email': account.email,
+                'first_name': account.first_name,
+                'last_name': account.last_name,
+                'role': account.role,
+                'password': None,  # Don't send passwords
+                'sex': account.sex,
+                'status': account.status,
+                'course_section': account.course_section.id if account.course_section else None,
+                'fingerprint_template': account.fingerprint_template
+            })
+        
+        return JsonResponse(accounts_list, safe=False)
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': str(e)
+        }, status=500)
+        
+@csrf_exempt
+@require_http_methods(["POST"])
+def trigger_mobile_sync(request):
+    """Trigger sync to mobile apps"""
+    try:
+        print("Mobile sync triggered from web admin")
+        
+        # Get counts of data available for sync
+        account_count = Account.objects.count()
+        schedule_count = ClassSchedule.objects.count()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Mobile sync triggered successfully',
+            'data': {
+                'accounts_available': account_count,
+                'schedules_available': schedule_count
+            }
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
 class ClassScheduleViewSet(viewsets.ModelViewSet):
     queryset = ClassSchedule.objects.all()
     serializer_class = ClassScheduleSerializer
