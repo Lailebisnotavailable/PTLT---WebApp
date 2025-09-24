@@ -1,7 +1,11 @@
 /* Reset and base styles */
 body {
-    background-color: #eceafd;
-    font-family: 'Segoe UI', sans-serif;
+    background-image: url('/static/image/PTLT_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
 }
 
 /* Login card */
