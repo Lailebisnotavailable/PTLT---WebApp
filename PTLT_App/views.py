@@ -52,6 +52,7 @@ from .models import CourseSection
 from .models import ClassSchedule
 from .models import AttendanceRecord
 from .models import Semester
+from .models import AccountUploadNotification
 
 
 from .serializers import (
@@ -732,10 +733,20 @@ def class_management(request):
     today = timezone.now().date()
     
     current_semester = Semester.objects.filter(
-    start_date__lte=today,
-    end_date__gte=today
+        start_date__lte=today,
+        end_date__gte=today
     ).first()
-    active_semester = current_semester  # no need to query twice
+    active_semester = current_semester
+    
+    # Get unread notifications count
+    new_accounts_count = AccountUploadNotification.objects.filter(is_read=False).count()
+    recent_uploads = AccountUploadNotification.objects.filter(is_read=False)[:5]  # Last 5
+    
+    # Mark as read if user clicks "Mark as Read"
+    if request.GET.get('mark_read') == 'true':
+        AccountUploadNotification.objects.filter(is_read=False).update(is_read=True)
+        messages.success(request, f'Marked {new_accounts_count} notifications as read.')
+        return redirect('class_management')
     
     course_sections = CourseSection.objects.all()
 
@@ -777,9 +788,11 @@ def class_management(request):
         "active_semester": active_semester,
         'course_sections': course_sections,
         'classes': classes,
-        'instructors_json': instructors_json
+        'instructors_json': instructors_json,
+        'new_accounts_count': new_accounts_count,  # NEW
+        'recent_uploads': recent_uploads,  # NEW
+        'current_semester': current_semester
     })
-
 @csrf_exempt
 def update_class_schedule(request, pk):
     if request.method == "POST":
@@ -898,12 +911,18 @@ class AccountViewSet(viewsets.ModelViewSet):
         
         return super().create(request, *args, **kwargs) 
     def perform_create(self, serializer):
-        """Add audit trail for account creation"""
+        """Add audit trail and notification for account creation"""
         account = serializer.save()
+        
+        # Create notification for new account upload
+        AccountUploadNotification.objects.create(
+            account_name=f"{account.first_name} {account.last_name}"
+        )
         
         # Log who created this account
         if self.request.user.username == 'mobile_system':
             print(f"Account {account.user_id} created via mobile upload")
+            print(f"Notification created for new account: {account.first_name} {account.last_name}")
         else:
             print(f"Account {account.user_id} created by user {self.request.user.username}")
         

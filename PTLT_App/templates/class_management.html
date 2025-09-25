@@ -29,6 +29,32 @@
             
             
             <button id="syncToMobileBtn" class="btn btn-success ms-2">Sync to Mobile App</button>
+            <!-- Notification Alert for New Account Uploads -->
+            {% if new_accounts_count > 0 %}
+            <div class="alert alert-info alert-dismissible fade show d-flex justify-content-between align-items-center mt-3" role="alert">
+                <div>
+                    <strong>New Account Uploads!</strong> 
+                    {{ new_accounts_count }} new account{{ new_accounts_count|pluralize }} uploaded from mobile app.
+                    <br><small class="text-muted">⚠️ Don't forget to sync the accounts to mobile app after reviewing.</small>
+                    <button type="button" class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="collapse" data-bs-target="#recentUploads">
+                        View Details
+                    </button>
+                </div>
+                <a href="?mark_read=true" class="btn btn-sm btn-success">Mark as Read</a>
+            </div>
+
+            <!-- Collapsible Details -->
+            <div class="collapse" id="recentUploads">
+                <div class="card card-body mb-3">
+                    <h6>Recent Account Uploads:</h6>
+                    <ul class="mb-0">
+                        {% for upload in recent_uploads %}
+                        <li>{{ upload.account_name }} - {{ upload.uploaded_at|timesince }} ago</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
             {% if messages %}
                 {% for message in messages %}
                     {% if "semester" in message.tags %}

@@ -140,3 +140,11 @@ class Semester(models.Model):
 
     def __str__(self):
         return f"{self.start_date} - {self.end_date}"
+
+class AccountUploadNotification(models.Model):
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    account_name = models.CharField(max_length=200)
+    is_read = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-uploaded_at']
