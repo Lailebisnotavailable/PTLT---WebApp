@@ -793,6 +793,45 @@ def class_management(request):
         'recent_uploads': recent_uploads,  # NEW
         'current_semester': current_semester
     })
+
+@require_http_methods(["POST"])
+def add_course_section(request):
+    try:
+        data = json.loads(request.body)
+        course_name = data.get('course_name', '').strip()
+        section_name = data.get('section_name', '').strip()
+
+        if not course_name or not section_name:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Course name and section name are required.'
+            }, status=400)
+
+        # Check if already exists
+        course_section_str = f"{course_name} {section_name}"
+        if CourseSection.objects.filter(course_section=course_section_str).exists():
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Section "{course_section_str}" already exists.'
+            }, status=400)
+
+        # Create new course section
+        new_section = CourseSection.objects.create(
+            course_name=course_name,
+            section_name=section_name
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Course section added successfully.',
+            'course_section': new_section.course_section
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)    
 @csrf_exempt
 def update_class_schedule(request, pk):
     if request.method == "POST":
