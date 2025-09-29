@@ -32,6 +32,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from datetime import datetime, date
+from functools import wraps
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -54,6 +55,9 @@ from .models import AttendanceRecord
 from .models import Semester
 from .models import AccountUploadNotification
 
+from collections import defaultdict
+from django.utils.dateparse import parse_date
+
 
 from .serializers import (
     AccountSerializer, ClassScheduleSerializer, AttendanceRecordSerializer,
@@ -65,6 +69,43 @@ from docxtpl import DocxTemplate
 from io import BytesIO
 import os
 from django.conf import settings
+
+# Custom authentication decorators
+def admin_required(view_func):
+    @wraps(view_func)
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        try:
+            account = Account.objects.get(email=request.user.email, role='Admin')
+        except Account.DoesNotExist:
+            messages.error(request, "Access denied: Admin privileges required.")
+            return redirect('login')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+def instructor_or_admin_required(view_func):
+    @wraps(view_func)
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        try:
+            account = Account.objects.get(email=request.user.email, role__in=['Instructor', 'Admin'])
+        except Account.DoesNotExist:
+            messages.error(request, "Access denied: Instructor or Admin role required.")
+            return redirect('login')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+def instructor_required(view_func):
+    @wraps(view_func)
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        try:
+            account = Account.objects.get(email=request.user.email, role='Instructor')
+        except Account.DoesNotExist:
+            messages.error(request, "Access denied: Instructor role required.")
+            return redirect('login')
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 #para to sa schedule ni instructor
 PERIODS = [
@@ -86,20 +127,50 @@ def login_view(request):
         # Create default admin and instructor accounts
         default_accounts = [
             {
-                'user_id': 'admin001',
-                'email': 'shintura0609@gmail.com',
-                'first_name': 'Admin',
-                'last_name': 'User',
+                'user_id': '000000',
+                'email': 'tupcptlt@gmail.com',
+                'first_name': 'Super Admin',
+                'last_name': 'Account 0',
                 'role': 'Admin',
                 'password': 'admin',
                 'sex': 'Other',
                 'status': 'Active'
             },
             {
-                'user_id': 'instructor001',
-                'email': 'sjpotpot13@gmail.com',
-                'first_name': 'Instructor',
-                'last_name': 'User',
+                'user_id': '000001',
+                'email': 'shelwinjay.buenaventura@gsfe.tupcavite.edu.ph',
+                'first_name': 'Dummy',
+                'last_name': 'Account 1',
+                'role': 'Instructor',
+                'password': 'instructor',
+                'sex': 'Other',
+                'status': 'Active'
+            },
+            {
+                'user_id': '000002',
+                'email': 'marktrieste.milan@gsfe.tupcavite.edu.ph',
+                'first_name': 'Dummy',
+                'last_name': 'Account 2',
+                'role': 'Instructor',
+                'password': 'instructor',
+                'sex': 'Other',
+                'status': 'Active'
+            },
+            {
+                'user_id': '000003',
+                'email': 'markjoshua.salinas@gsfe.tupcavite.edu.ph',
+                'first_name': 'Dummy',
+                'last_name': 'Account 3',
+                'role': 'Instructor',
+                'password': 'instructor',
+                'sex': 'Other',
+                'status': 'Active'
+            },
+            {
+                'user_id': '000004',
+                'email': 'janxander.yangco@gsfe.tupcavite.edu.ph',
+                'first_name': 'Dummy',
+                'last_name': 'Account 4',
                 'role': 'Instructor',
                 'password': 'instructor',
                 'sex': 'Other',
@@ -131,6 +202,7 @@ def login_view(request):
             )
     
     if request.method == 'POST':
+        #VVVV get the email and password inputted by the user
         email = request.POST.get('email')
         password = request.POST.get('password')
 
@@ -143,10 +215,9 @@ def login_view(request):
                 user_obj = User.objects.get(email=email)
                 # Try normal authentication first
                 user = authenticate(request, username=user_obj.username, password=password)
-                
                 if user is not None:
-                    # Check if password is the temporary "00000"
-                    if password == "00000":
+                    # Check if password is the temporary "00000" or "admin"
+                    if password == "000000" or password == "admin":
                         # Store user info in session for password change
                         request.session['temp_user_id'] = account.user_id
                         request.session['temp_email'] = email
@@ -179,7 +250,7 @@ def login_view(request):
                     messages.error(request, "Account not fully set up. Please contact administrator.")
                     return redirect('login')
             
-            messages.error(request, "Invalid credentials.")
+            messages.error(request, "Invalid credentials")
             return redirect('login')
 
         except Account.DoesNotExist:
@@ -198,6 +269,14 @@ def force_password_change(request):
     if request.method == 'POST':
         new_password = request.POST.get('new_password')
         confirm_password = request.POST.get('confirm_password')
+
+        if new_password == '000000':
+            messages.error(request, "Please try a different password.")
+            return render(request, 'force_password_change.html')
+        
+        if new_password == 'secret':
+            messages.error(request, "Uy bat mo alam?")
+            return render(request, 'force_password_change.html')
         
         if new_password != confirm_password:
             messages.error(request, "Passwords do not match.")
@@ -259,6 +338,7 @@ def logout_view(request):
     logout(request)  # Destroys session and logs out user
     return redirect('login') 
 
+@admin_required
 def create_instructor(request):
     if request.method == 'POST':
         form_type = request.POST.get('form_type')
@@ -482,8 +562,8 @@ def reset_password(request, encoded_email, token):
         messages.error(request, 'An error occurred during password reset. Please try again later.')
         return redirect('login')
     
-    
-@login_required
+
+@instructor_required
 def student_attendance_records(request):
     # Get logged-in instructor's Account entry
     try:
@@ -494,19 +574,20 @@ def student_attendance_records(request):
     # Subjects/Courses taught by this instructor
     schedules = ClassSchedule.objects.filter(professor=instructor_account)
 
-    # Get selected schedule ID from GET params
     selected_schedule_id = request.GET.get("schedule")
+    selected_date_range = request.GET.get("date_range")
     date_ranges = []
+    attendance_table = []
 
     if selected_schedule_id:
-        # Filter attendance for this class
+        # Fetch unique attendance dates for selected class schedule
         attendance_dates = AttendanceRecord.objects.filter(
             class_schedule_id=selected_schedule_id
         ).values_list("date", flat=True).distinct().order_by("date")
 
         attendance_dates = list(attendance_dates)
 
-        # Group into ranges of 8 days
+        # Group into 8-day ranges for the filter dropdown
         for i in range(0, len(attendance_dates), 8):
             start_date = attendance_dates[i]
             end_date = attendance_dates[min(i + 7, len(attendance_dates) - 1)]
@@ -515,15 +596,119 @@ def student_attendance_records(request):
                 "label": f"{start_date.strftime('%B %d, %Y')} - {end_date.strftime('%B %d, %Y')}"
             })
 
+        if selected_date_range:
+            try:
+                start_str, end_str = selected_date_range.split("_to_")
+                start_date = parse_date(start_str)
+                end_date = parse_date(end_str)
+            except (ValueError, TypeError):
+                start_date = end_date = None
+
+            if start_date and end_date:
+                # Get all attendance records within the date range
+                attendance_qs = AttendanceRecord.objects.filter(
+                    class_schedule_id=selected_schedule_id,
+                    date__range=(start_date, end_date)
+                ).select_related('student')
+
+                # Get schedule object once
+                schedule_obj = ClassSchedule.objects.get(id=selected_schedule_id)
+
+                # Get students in the same course_section as the schedule
+                students_in_schedule = Account.objects.filter(
+                    course_section_id=schedule_obj.course_section_id
+                ).order_by('last_name', 'first_name')
+
+                # Map attendance data: {student_id: {date: {'status': status, 'time_in': time_in, 'time_out': time_out}}}
+                attendance_data = defaultdict(lambda: defaultdict(dict))
+                for record in attendance_qs:
+                    attendance_data[record.student.id][record.date] = {
+                        'status': record.status,
+                        'time_in': record.time_in,
+                        'time_out': record.time_out
+                    }
+
+                # Build date headers (max 8 dates)
+                date_headers = [d for d in attendance_dates if start_date <= d <= end_date][:8]
+                num_empty_date_column = 8 - len(date_headers)
+                #create a pseudo list just for the for loop in html to work
+                num_empty_date_columns = []
+                for i in range(num_empty_date_column):
+                    num_empty_date_columns.append("")
+
+
+                attendance_table = []
+                for student in students_in_schedule:
+                    course_section_for_student = student.course_section
+                    # Build dates_statuses as a list of dicts containing all attendance info
+                    dates_statuses = []
+                    for date in date_headers:
+                        attendance_info = attendance_data[student.id].get(date, {})
+                        dates_statuses.append({
+                            'status': attendance_info.get('status', ''),
+                            'time_in': attendance_info.get('time_in', ''),
+                            'time_out': attendance_info.get('time_out', '')
+                        })
+                    
+                    # Pad with empty dicts to always have 8 items
+                    while len(dates_statuses) < 8:
+                        dates_statuses.append({
+                            'status': '',
+                            'time_in': '',
+                            'time_out': ''
+                        })
+
+                    # DEBUG: Check the length
+                    print(f"Student {student.user_id}: dates_statuses length = {len(dates_statuses)}")
+
+                    row = {
+                        "student_id": student.user_id, 
+                        "name": f"{student.first_name} {student.last_name}",
+                        "sex": student.sex,
+                        "course": course_section_for_student,
+                        "subject": schedule_obj.course_code,
+                        "room": schedule_obj.room_assignment,
+                        "dates": dates_statuses,  # Always 8 items now
+                    }
+                    attendance_table.append(row)
+
+                context = {
+                    "schedules": schedules,
+                    "date_ranges": date_ranges,
+                    "selected_schedule_id": selected_schedule_id,
+                    "selected_date_range": selected_date_range,
+                    "attendance_table": attendance_table,
+                    "date_headers": date_headers,
+                    "num_empty_date_columns": num_empty_date_columns,
+                }
+                return render(request, "student_attendance_records.html", context)
+
+        # If no valid date range selected or dates invalid, still render with schedules & date ranges
+        context = {
+            "schedules": schedules,
+            "date_ranges": date_ranges,
+            "selected_schedule_id": selected_schedule_id,
+            "attendance_table": [],
+            "date_headers": [],
+            "num_empty_date_columns": ["", "", "", "", "", "", "", "", ],
+        }
+        return render(request, "student_attendance_records.html", context)
+
+    # If no schedule selected at all, render with just schedules and empty date ranges
     context = {
         "schedules": schedules,
         "date_ranges": date_ranges,
-        "selected_schedule_id": selected_schedule_id
+        "selected_schedule_id": selected_schedule_id,
+        "attendance_table": [],
+        "date_headers": [],
+        "num_empty_date_columns": ["", "", "", "", "", "", "", "", ],
     }
     return render(request, "student_attendance_records.html", context)
 
+
+
 @require_POST
-@login_required
+@instructor_required
 def update_class_schedule_instructor(request):
     try:
         data = json.loads(request.body)
@@ -561,7 +746,7 @@ def update_class_schedule_instructor(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-@login_required    
+@instructor_required    
 def instructor_schedule(request):
     user = request.user
     try:
@@ -571,10 +756,17 @@ def instructor_schedule(request):
 
     schedules = ClassSchedule.objects.filter(professor=instructor)
 
+    for schedule in schedules:
+        student_acc = Account.objects.filter(course_section_id=schedule.course_section_id)
+        student_count = len(student_acc)
+        schedule.student_count = int(student_count)
+        schedule.save()
+
     return render(request, 'schedule.html', {
         'class_schedules': schedules,
     })
 
+@admin_required
 def account_management(request):
     role_filter = request.GET.get('role', '')
     status_filter = request.GET.get('status', '')
@@ -598,6 +790,7 @@ def account_management(request):
     return render(request, 'account_management.html', {'accounts': accounts})
 
 @csrf_exempt
+@admin_required
 def delete_account(request, account_id):
     if request.method == 'POST':
         acc = get_object_or_404(Account, id=account_id)
@@ -606,6 +799,7 @@ def delete_account(request, account_id):
     return JsonResponse({'status': 'error'}, status=400)
 
 @csrf_exempt
+@admin_required
 def update_account(request, account_id):
     print("1")
     if request.method == 'POST':
@@ -630,6 +824,7 @@ def update_account(request, account_id):
             return JsonResponse({'status': 'error', 'message': str(e)})
 
     return JsonResponse({'status': 'invalid_request'})
+
 import csv
 import io
 from django.http import JsonResponse
@@ -637,6 +832,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Account, ClassSchedule, CourseSection
 
 @csrf_exempt
+@admin_required
 def import_class_schedule(request):
     print("⚡ Import request received")
     print("Method:", request.method)
@@ -729,7 +925,9 @@ def import_class_schedule(request):
         "errors": results["errors"],
     })
 
+@admin_required
 def class_management(request):
+    
     today = timezone.now().date()
     
     current_semester = Semester.objects.filter(
@@ -742,6 +940,15 @@ def class_management(request):
     new_accounts_count = AccountUploadNotification.objects.filter(is_read=False).count()
     recent_uploads = AccountUploadNotification.objects.filter(is_read=False)[:5]  # Last 5
     
+    #update student count
+
+    schedules = ClassSchedule.objects.all()
+    for schedule in schedules:
+        student_acc = Account.objects.filter(course_section_id=schedule.course_section_id)
+        student_count = len(student_acc)
+        schedule.student_count = int(student_count)
+        schedule.save()
+
     # Mark as read if user clicks "Mark as Read"
     if request.GET.get('mark_read') == 'true':
         AccountUploadNotification.objects.filter(is_read=False).update(is_read=True)
@@ -795,6 +1002,7 @@ def class_management(request):
     })
 
 @require_http_methods(["POST"])
+@admin_required
 def add_course_section(request):
     try:
         data = json.loads(request.body)
@@ -832,7 +1040,9 @@ def add_course_section(request):
             'status': 'error',
             'message': str(e)
         }, status=500)    
+
 @csrf_exempt
+@admin_required
 def update_class_schedule(request, pk):
     if request.method == "POST":
         try:
@@ -858,6 +1068,7 @@ def update_class_schedule(request, pk):
             return JsonResponse({"status": "error", "message": str(e)})
 
 @csrf_exempt
+@admin_required
 def delete_class_schedule(request, pk):
     if request.method == "POST":
         try:
@@ -867,16 +1078,200 @@ def delete_class_schedule(request, pk):
         except:
             return JsonResponse({"status": "error"}, status=400)
 
+@instructor_or_admin_required
 def attendance_report_template(request):
-    # Get class schedules for the dropdown
-    class_schedules = ClassSchedule.objects.all()
+    # Get logged-in instructor's Account entry
+    try:
+        instructor_account = Account.objects.get(email=request.user.email, role='Instructor')
+    except Account.DoesNotExist:
+        return render(request, "error.html", {"message": "Instructor account not found"})
     
-    context = {
-        'rows': range(1, 41),  # This creates numbers 1-40
-        'class_schedules': class_schedules
-    }
-    return render(request, 'attendance_report_template.html', context)
+    # Get class schedules for the dropdown
+    schedules = ClassSchedule.objects.filter(professor=instructor_account)
+    
+    selected_schedule_id = request.GET.get("schedule")
+    selected_date_range = request.GET.get("date_range")
+    date_ranges = []
+    attendance_table = []
+    attendance_data = {}
+    students_list = []
+    
+    if selected_schedule_id:
+        try:
+            # Get the selected schedule
+            schedule_obj = ClassSchedule.objects.get(id=selected_schedule_id)
+            
+            # Class details for the form
+            attendance_data_attendance_report = {
+                'subject': schedule_obj.course_title,
+                'faculty_name': f"{schedule_obj.professor.first_name} {schedule_obj.professor.last_name}" if schedule_obj.professor else 'TBA',
+                'course': schedule_obj.course_section.course_name if schedule_obj.course_section else '',
+                'room': schedule_obj.room_assignment or 'TBA',
+                'year_section': schedule_obj.course_section.section_name if schedule_obj.course_section else '',
+                'schedule': f"{schedule_obj.days} {schedule_obj.time_in}-{schedule_obj.time_out}",
+            }
+            
+        except ClassSchedule.DoesNotExist:
+            pass
 
+        # Fetch unique attendance dates for selected class schedule
+        attendance_dates = AttendanceRecord.objects.filter(
+            class_schedule_id=selected_schedule_id
+        ).values_list("date", flat=True).distinct().order_by("date")
+
+        attendance_dates = list(attendance_dates)
+
+        # Group into 8-day ranges for the filter dropdown
+        for i in range(0, len(attendance_dates), 8):
+            start_date = attendance_dates[i]
+            end_date = attendance_dates[min(i + 7, len(attendance_dates) - 1)]
+            date_ranges.append({
+                "value": f"{start_date}_to_{end_date}",
+                "label": f"{start_date.strftime('%B %d, %Y')} - {end_date.strftime('%B %d, %Y')}"
+            })
+
+        #if may sinelect na na date range
+        if selected_date_range:
+            try:
+                start_str, end_str = selected_date_range.split("_to_")
+                start_date = parse_date(start_str)
+                end_date = parse_date(end_str)
+            except (ValueError, TypeError):
+                start_date = end_date = None
+
+            if start_date and end_date:
+                # Get all attendance records within the date range
+                attendance_qs = AttendanceRecord.objects.filter(
+                    class_schedule_id=selected_schedule_id,
+                    date__range=(start_date, end_date)
+                ).select_related('student')
+
+                # Get schedule object once
+                schedule_obj = ClassSchedule.objects.get(id=selected_schedule_id)
+
+                # Get students in the same course_section as the schedule
+                students_in_schedule = Account.objects.filter(
+                    course_section_id=schedule_obj.course_section_id
+                ).order_by('last_name', 'first_name')
+
+                # Map attendance data: {student_id: {date: {'status': status, 'time_in': time_in, 'time_out': time_out}}}
+                attendance_data = defaultdict(lambda: defaultdict(dict))
+                for record in attendance_qs:
+                    attendance_data[record.student.id][record.date] = {
+                        'status': record.status,
+                        'time_in': record.time_in,
+                        'time_out': record.time_out
+                    }
+
+                # Build date headers (max 8 dates)
+                date_headers = [d for d in attendance_dates if start_date <= d <= end_date][:8]
+                num_empty_date_column = 8 - len(date_headers)
+                #create a pseudo list just for the for loop in html to work
+                num_empty_date_columns = []
+                for i in range(num_empty_date_column):
+                    num_empty_date_columns.append("")
+
+
+                attendance_table = []
+                for student in students_in_schedule:
+                    course_section_for_student = student.course_section
+                    # Build dates_statuses as a list of dicts containing all attendance info
+                    dates_statuses = []
+                    for date in date_headers:
+                        attendance_info = attendance_data[student.id].get(date, {})
+                        dates_statuses.append({
+                            'status': attendance_info.get('status', ''),
+                            'time_in': attendance_info.get('time_in', ''),
+                            'time_out': attendance_info.get('time_out', '')
+                        })
+                    
+                    # Pad with empty dicts to always have 8 items
+                    while len(dates_statuses) < 8:
+                        dates_statuses.append({
+                            'status': '',
+                            'time_in': '',
+                            'time_out': ''
+                        })
+                    
+                        
+                    row = {
+                        "student_id": student.user_id, 
+                        "name": f"{student.first_name} {student.last_name}",
+                        "sex": student.sex,
+                        "course": course_section_for_student,
+                        "subject": schedule_obj.course_code,
+                        "room": schedule_obj.room_assignment,
+                        "dates": dates_statuses,  # Always 8 items now
+                    }
+                    attendance_table.append(row)
+
+                else:
+                    row = [""]
+                # Build date headers (max 8 dates)
+                date_headers = [d for d in attendance_dates if start_date <= d <= end_date][:8]
+                num_empty_date_column = 8 - len(date_headers)
+                #create a pseudo list just for the for loop in html to work
+                num_empty_date_columns = []
+                for i in range(num_empty_date_column):
+                    num_empty_date_columns.append("")
+
+                num_empty_row = 40 - len(attendance_table)
+                #create a pseudo list just for the for loop in html to work
+                num_empty_rows = []
+                num_filled_rows = []
+                for i in range(num_empty_row):
+                    num_empty_rows.append("")
+
+                for i in range(len(attendance_table)):
+                    num_filled_rows.append("")
+
+                print(f"{len(num_empty_rows)}")
+                print(f"{len(num_filled_rows)}")
+
+                context = {
+                    'attendance_data': attendance_data_attendance_report,
+                    "schedules": schedules,
+                    "date_ranges": date_ranges,
+                    "selected_schedule_id": selected_schedule_id,
+                    "selected_date_range": selected_date_range,
+                    "attendance_table": attendance_table,
+                    "date_headers": date_headers,
+                    "num_empty_rows": num_empty_rows,
+                    "num_filled_rows": num_filled_rows,
+                    "num_empty_date_columns": num_empty_date_columns,
+                }
+                return render(request, "attendance_report_template.html", context)
+        else:
+    # If no valid date range selected or dates invalid, still render with schedules & date ranges
+            context = {
+                'attendance_data': attendance_data_attendance_report,
+                "schedules": schedules,
+                "date_ranges": date_ranges,
+                "selected_schedule_id": selected_schedule_id,
+                "attendance_table": [],
+                "date_headers": [],
+                "num_empty_rows": [""]*40,
+                "num_filled_rows": [],
+                "num_empty_date_columns": ["", "", "", "", "", "", "", "", ],
+            }
+            return render(request, "attendance_report_template.html", context)
+
+    # If no schedule selected at all, render with just schedules and empty date ranges
+    context = {
+        'attendance_data': {"":"",'faculty_name': f"{instructor_account.first_name} {instructor_account.last_name}" if instructor_account else 'TBA',"":"","":"","":"","":""},
+        "schedules": schedules,
+        "date_ranges": date_ranges,
+        "selected_schedule_id": selected_schedule_id,
+        "attendance_table": [],
+        "date_headers": [],
+        "num_empty_rows": [""]*40,
+        "num_filled_rows": [],
+        "num_empty_date_columns": ["", "", "", "", "", "", "", "", ],
+    }
+    return render(request, "attendance_report_template.html", context)
+    
+
+@admin_required
 def set_semester(request):
     today = date.today()
     current_semester = Semester.objects.filter(start_date__lte=today, end_date__gte=today).first()
@@ -904,7 +1299,7 @@ def set_semester(request):
             messages.error(request, "Semester start date cannot be earlier than today.", extra_tags="semester")
             return redirect("class_management")
 
-        # ✅ If a semester exists and is ongoing → block unless editing
+        # If a semester exists and is ongoing → block unless editing
         if current_semester and "confirm_edit" not in request.POST:
             messages.error(request, "A semester is already active. Confirm edit to change it.", extra_tags="semester")
             return redirect("class_management")
@@ -922,10 +1317,10 @@ def set_semester(request):
 
         return redirect("class_management")
 
-    # 👇 this stays at the bottom so the page renders when not POST
+    # this stays at the bottom so the page renders when not POST
     return render(request, "class_management.html", {"current_semester": current_semester,"today": today })
 
-#para sa api ng django rest(web app - mob app connection)
+# API views for mobile app integration
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
@@ -949,6 +1344,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=400)
         
         return super().create(request, *args, **kwargs) 
+    
     def perform_create(self, serializer):
         """Add audit trail and notification for account creation"""
         account = serializer.save()
@@ -972,7 +1368,8 @@ class AccountViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             return Response({'status': 'success'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#para sa web app to mob app account overwrite/syncing
+
+# Web app to mobile app account overwrite/syncing
 @csrf_exempt
 @require_http_methods(["GET"])
 def mobile_account_sync(request):
@@ -1029,6 +1426,7 @@ def trigger_mobile_sync(request):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
 class ClassScheduleViewSet(viewsets.ModelViewSet):
     queryset = ClassSchedule.objects.all()
     serializer_class = ClassScheduleSerializer
@@ -1044,7 +1442,7 @@ class ClassScheduleViewSet(viewsets.ModelViewSet):
         """Get today's schedules for mobile"""
         today = timezone.now().date()
         schedules = ClassSchedule.objects.all()
-        # ✅ Make sure this line uses MobileClassScheduleSerializer
+        # Make sure this line uses MobileClassScheduleSerializer
         serializer = MobileClassScheduleSerializer(schedules, many=True)
         return Response(serializer.data)
 
@@ -1112,7 +1510,8 @@ def mobile_login(request):
     
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-# for docx file
+# For docx file generation
+@instructor_or_admin_required
 def generate_attendance_docx_view(request, class_id):
     """
     Generate attendance template as .docx file
@@ -1141,21 +1540,21 @@ def generate_attendance_docx_view(request, class_id):
             dates.append(new_date.strftime("%m/%d"))
         
         context = {
-                        'subject': class_schedule.course_title,
-                        'faculty_name': f"{class_schedule.professor.first_name} {class_schedule.professor.last_name}" if class_schedule.professor else '',
-                        'course': class_schedule.course_section.course_name if class_schedule.course_section else '',
-                        'room_assignment': class_schedule.room_assignment,
-                        'year_section': class_schedule.course_section.course_section if class_schedule.course_section else '',
-                        'schedule': f"{class_schedule.days} {class_schedule.time_in}-{class_schedule.time_out}",
-                        'date1': dates[0],
-                        'date2': dates[1],
-                        'date3': dates[2],
-                        'date4': dates[3],
-                        'date5': dates[4],
-                        'date6': dates[5],
-                        'date7': dates[6],
-                        'date8': dates[7],
-                    }
+            'subject': class_schedule.course_title,
+            'faculty_name': f"{class_schedule.professor.first_name} {class_schedule.professor.last_name}" if class_schedule.professor else '',
+            'course': class_schedule.course_section.course_name if class_schedule.course_section else '',
+            'room_assignment': class_schedule.room_assignment,
+            'year_section': class_schedule.course_section.course_section if class_schedule.course_section else '',
+            'schedule': f"{class_schedule.days} {class_schedule.time_in}-{class_schedule.time_out}",
+            'date1': dates[0],
+            'date2': dates[1],
+            'date3': dates[2],
+            'date4': dates[3],
+            'date5': dates[4],
+            'date6': dates[5],
+            'date7': dates[6],
+            'date8': dates[7],
+        }
 
         # Add individual student data for up to 40 students
         for i, student in enumerate(students[:40]):  # Limit to first 40 students
@@ -1197,7 +1596,7 @@ def generate_attendance_docx_view(request, class_id):
     
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def mobile_auth(request): #para to sa 
+def mobile_auth(request):
     """Authentication endpoint for mobile devices"""
     device_id = request.data.get('device_id')
     device_secret = request.data.get('device_secret')
@@ -1224,4 +1623,4 @@ def mobile_auth(request): #para to sa
             'device_id': device_id
         })
     
-    return Response({'error': 'Invalid device credentials'}, status=401)    
+    return Response({'error': 'Invalid device credentials'}, status=401)

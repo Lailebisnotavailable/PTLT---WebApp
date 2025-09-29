@@ -17,8 +17,16 @@
         {% endif %}
     </td>
     <td>
-        <button class="btn btn-sm btn-outline-primary me-1 edit-btn">Edit</button>
-        <button class="btn btn-sm btn-outline-danger delete-btn">Delete</button>
+        <button class="btn btn-sm btn-outline-primary me-1 edit-btn"
+                data-id="{{ account.user_id }}"
+                {% if account.user_id == '000000' %} disabled {% endif %}>
+            Edit
+        </button>
+        <button class="btn btn-sm btn-outline-danger delete-btn"
+                data-id="{{ account.user_id }}"
+                {% if account.user_id == '000000' %} disabled {% endif %}>
+            Delete
+        </button>
     </td>
 </tr>
 {% endfor %}

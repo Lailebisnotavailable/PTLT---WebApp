@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block content %}
+{% with "01234567" as range %}
 <head>
-    <!-- Always Include -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Attendance Records</title>
@@ -11,10 +11,8 @@
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
 
-    <!-- Custom CSS and JS -->
-    {% load static %}
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/student_attendance_records.css' %}">
 </head>
 <body>
@@ -26,24 +24,41 @@
         <!-- Filter Section -->
         <div class="row g-3 align-items-center mb-4">
             <div class="col-md-4">
-                <label for="subject" class="form-label">Subject & Program:</label>
-                <select id="subject" class="form-select" onchange="this.form.submit()" name="schedule">
-                    <option value="">-- Select Subject & Program --</option>
-                    {% for sched in schedules %}
-                        <option value="{{ sched.id }}" {% if sched.id|stringformat:'s' == selected_schedule_id %}selected{% endif %}>
-                            {{ sched.course_code }} - {{ sched.course_section }}
-                        </option>
-                    {% endfor %}
-                </select>
+                <form method="GET" action="{% url 'student_attendance_records' %}" id="scheduleForm">
+                    {% if selected_date_range %}
+                        <input type="hidden" name="date_range" value="{{ selected_date_range }}">
+                    {% endif %}
+                    <label for="subject" class="form-label">Subject & Program:</label>
+                    <select id="subject" class="form-select" name="schedule">
+                        <option value="">-- Select Subject & Program --</option>
+                        {% for sched in schedules %}
+                            <option value="{{ sched.id }}" {% if sched.id|stringformat:'s' == selected_schedule_id %}selected{% endif %}>
+                                {{ sched.course_code }} - {{ sched.course_section }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
             </div>
 
             <div class="col-md-4">
-                <label for="date-range" class="form-label">Date Range:</label>
-                <select id="date-range" class="form-select">
-                    {% for dr in date_ranges %}
-                        <option value="{{ dr.value }}">{{ dr.label }}</option>
-                    {% endfor %}
-                </select>
+                <form method="GET" action="{% url 'student_attendance_records' %}" id="dateForm">
+                    {% if selected_schedule_id %}
+                        <input type="hidden" name="schedule" value="{{ selected_schedule_id }}">
+                    {% endif %}
+                    <label for="date-range" class="form-label">Date Range:</label>
+                    <select id="date-range" class="form-select" name="date_range" {% if not date_ranges %}disabled{% endif %}>
+                        <option value="">-- Select Date Range --</option>
+                        {% for dr in date_ranges %}
+                            <option value="{{ dr.value }}" {% if dr.value == selected_date_range %}selected{% endif %}>{{ dr.label }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+            
+            <div class="col-md-4 d-flex align-items-end">
+                {% if selected_schedule_id and not date_ranges %}
+                    <small class="text-muted">No attendance records found for this course</small>
+                {% endif %}
             </div>
         </div>
 
@@ -67,28 +82,45 @@
                         <th colspan="8">Date</th>
                     </tr>
                     <tr>
-                        <th class="date-th"></th>
-                        <th class="date-th"></th>
-                        <th class="date-th"></th>
-                        <th class="date-th"></th>
-                        <th class="date-th"></th>
-                        <th class="date-th"></th>
-                        <th class="date-th"></th>
-                        <th class="date-th"></th>
+                        {% for date in date_headers %}
+                            <th class="date-th">{{ date|date:"m/d" }}</th>
+                        {% endfor %}
+                        {% for i in num_empty_date_columns %}
+                            <th class="date-th"></th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
+                    {% for row in attendance_table %}
                     <tr>
-                        <td></td><td></td><td></td><td></td><td></td><td></td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td>{{ row.student_id }}</td>
+                        <td>{{ row.name }}</td>
+                        <td>{{ row.sex }}</td>
+                        <td>{{ row.subject }}</td>
+                        <td>{{ row.course }}</td>
+                        <td>{{ row.room }}</td>
+                        {% for attendance in row.dates %}
+                        <td>
+                            {% if attendance.time_in and attendance.time_out %}
+                                {% if attendance.time_in|time:"H:i" == "00:00" or attendance.time_out|time:"H:i" == "00:00" %}
+                                    Absent
+                                {% else %}
+                                    {{ attendance.time_in|time:"H:i" }} - {{ attendance.time_out|time:"H:i" }}
+                                {% endif %}
+                            {% elif attendance.status %}
+                                {{ attendance.status }}
+                            {% endif %}
+                        </td>
+                        {% endfor %}
                     </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
 
         <!-- Pagination -->
         <div class="d-flex justify-content-between align-items-center mt-3">
-            <span>Showing 1 result</span>
+            <span>Showing {{ attendance_table|length }} result{{ attendance_table|length|pluralize }}</span>
             <div>
                 <button class="btn btn-outline-secondary btn-sm">&lt;</button>
                 <button class="btn btn-secondary btn-sm">1</button>
@@ -103,12 +135,38 @@
     </div>
 </div>
 
-<!-- JavaScript for date range update -->
+<!-- JavaScript for controlled form submission -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const select = document.getElementById("date-range");
+    const subjectSelect = document.getElementById("subject");
+    const dateSelect = document.getElementById("date-range");
     const thCells = document.querySelectorAll(".date-th");
+    
+    let submitTimeout;
 
+    // Handle subject selection with a small delay to prevent accidental triggers
+    subjectSelect.addEventListener("change", function () {
+        if (submitTimeout) {
+            clearTimeout(submitTimeout);
+        }
+        
+        if (this.value) {
+            // Small delay to prevent accidental submissions
+            submitTimeout = setTimeout(() => {
+                document.getElementById("scheduleForm").submit();
+            }, 100);
+        }
+    });
+
+    // Handle date range selection
+    dateSelect.addEventListener("change", function () {
+    if (this.value) {
+        // Just submit the form - let Django render the correct dates
+        document.getElementById("dateForm").submit();
+    }
+    });
+
+    // Date formatting functions
     function formatDateMMDD(date) {
         const mm = (date.getMonth() + 1).toString().padStart(2, '0');
         const dd = date.getDate().toString().padStart(2, '0');
@@ -122,30 +180,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
         while (current <= end && dates.length < 8) {
             dates.push(new Date(current));
-            current.setDate(current.getDate() + 1);
+            current.setDate(current.getDate());
         }
 
         return dates;
     }
 
-    select.addEventListener("change", function () {
-        const [startStr, endStr] = this.value.split("_to_");
-        const dateArray = getDateRange(startStr, endStr);
+    function updateDateHeaders(value) {
+        if (value) {
+            const [startStr, endStr] = value.split("_to_");
+            const dateArray = getDateRange(startStr, endStr);
 
-        thCells.forEach((cell, index) => {
-            if (index < dateArray.length) {
-                cell.textContent = formatDateMMDD(dateArray[index]);
-            } else {
-                cell.textContent = "";
-            }
-        });
-    });
-
-    select.dispatchEvent(new Event("change"));
+            thCells.forEach((cell, index) => {
+                if (index < dateArray.length) {
+                    cell.textContent = formatDateMMDD(dateArray[index]);
+                } else {
+                    cell.textContent = "";
+                }
+            });
+        }
+    }
 });
-
 </script>
 
 </body>
+{% endwith %}
 {% endblock %}
-

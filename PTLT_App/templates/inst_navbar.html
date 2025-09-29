@@ -16,7 +16,6 @@
     </div>
 </div>
 
-<!-- Help Guide Modal -->
 <div class="modal fade" id="helpGuideModal" tabindex="-1" aria-labelledby="helpGuideLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content shadow">
@@ -38,15 +37,40 @@
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const helpImage = document.getElementById("helpImage");
+    const helpModal = document.getElementById("helpGuideModal");
     const helpSteps = [
       "{% static 'image/attendance_records_inst.png' %}",
       "{% static 'image/schedule_inst.png' %}"
     ];
 
     let currentStep = 0;
+    let modalInstance = null;
 
     function updateImage() {
       helpImage.src = helpSteps[currentStep];
+    }
+
+    // Create modal instance only once
+    function getModalInstance() {
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(helpModal, {
+          keyboard: true,
+          backdrop: true
+        });
+      }
+      return modalInstance;
+    }
+
+    // Clean up function to ensure backdrop is removed
+    function cleanupModal() {
+      // Remove any lingering backdrops
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => backdrop.remove());
+      
+      // Restore body scroll
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
     }
 
     document.getElementById("prevHelp").addEventListener("click", function () {
@@ -64,8 +88,27 @@
     });
 
     document.getElementById("helpBtn").addEventListener("click", function () {
-      const modal = new bootstrap.Modal(document.getElementById("helpGuideModal"));
+      const modal = getModalInstance();
       modal.show();
+    });
+
+    // Add event listeners for modal close events
+    helpModal.addEventListener('hidden.bs.modal', function () {
+      cleanupModal();
+      currentStep = 0; // Reset to first step
+      updateImage();
+    });
+
+    // Additional safety cleanup for the close button
+    helpModal.addEventListener('hide.bs.modal', function () {
+      setTimeout(cleanupModal, 100); // Small delay to ensure Bootstrap finishes
+    });
+
+    // Force cleanup on ESC key or backdrop click
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && helpModal.classList.contains('show')) {
+        cleanupModal();
+      }
     });
   });
 </script>

@@ -146,7 +146,7 @@
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
-                    </select>ip
+                    </select>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Day:</label>
@@ -167,7 +167,7 @@
                         <select class="form-select" name="course_section" id="courseSectionSelect" required>
                             <option value="">Select Program & Section</option>
                             {% for section in course_sections %}
-                                <option value="{{ section.course_section }}">{{ section.course_section }}</option>
+                                <option value="{{ section.course_section }}" id="previewSection">{{ section.course_section }}</option>
                             {% endfor %}
                         </select>
                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addSectionModal">
@@ -268,4 +268,50 @@
     </div>
 </div>
 </body>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const addSectionModalEl = document.getElementById('addSectionModal');
+  if (!addSectionModalEl) return;
+
+  let addSectionModalInstance = null;
+
+  function getAddSectionModalInstance() {
+    if (!addSectionModalInstance) {
+      addSectionModalInstance = new bootstrap.Modal(addSectionModalEl, {
+        keyboard: true,
+        backdrop: true
+      });
+    }
+    return addSectionModalInstance;
+  }
+
+  function cleanupModalBackdrops() {
+    // Remove any lingering modal backdrops
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+
+    // Restore body scrolling and padding
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+  }
+
+  addSectionModalEl.addEventListener('hidden.bs.modal', function () {
+    cleanupModalBackdrops();
+
+    // Optional: reset form inputs on modal close
+    const form = addSectionModalEl.querySelector('form');
+    if (form) form.reset();
+  });
+
+  addSectionModalEl.addEventListener('hide.bs.modal', function () {
+    setTimeout(cleanupModalBackdrops, 100);
+  });
+
+  // Example usage: If you want to programmatically open the modal
+  // document.getElementById('openAddSectionBtn').addEventListener('click', () => {
+  //   getAddSectionModalInstance().show();
+  // });
+});
+</script>
 {% endblock %}
