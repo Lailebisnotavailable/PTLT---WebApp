@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block content %}
-{% with "01234567" as range %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,21 +13,37 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/student_attendance_records.css' %}">
+
+    <style>
+        /* Force all td/th to have dark borders */
+        table td, table th {
+            border: 1px solid black !important;
+        }
+
+        /* Prevent border collapse issues */
+        table {
+            border-collapse: collapse !important;
+        }
+
+        /* Optional: fix width overflow */
+        .attendance-table th,
+        .attendance-table td {
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
-
-<div class="container py-4 custom-min-width">
-    <div class="container py-2 bg-white shadow rounded-4 p-4 py-4">
-        <h2 class="mb-4 text-decoration-underline">Student Attendance Records</h2>
-
-        <!-- Filter Section -->
-        <div class="row g-3 align-items-center mb-4">
-            <div class="col-md-4">
-                <form method="GET" action="{% url 'student_attendance_records' %}" id="scheduleForm">
+<div class="bg-white p-4 mx-auto shadow-sm rounded" style="max-width: 1200px;">
+    <div class="container py-4 custom-min-width">
+        <div class="d-flex justify-content-between rounded-3 align-items-center mb-3 nav_top d-print-none">
+            <div class="d-flex align-items-center nav_links d-print-none">
+                <strong class="pe-3 me-3 fs-5 ptlt no-print">Document Plotter</strong>
+            </div>
+        <div class="d-flex align-items-center d-print-none">
+                <form method="GET" action="{% url 'attendance_report_template' %}" id="scheduleForm">
                     {% if selected_date_range %}
                         <input type="hidden" name="date_range" value="{{ selected_date_range }}">
                     {% endif %}
-                    <label for="subject" class="form-label">Subject & Program:</label>
                     <select id="subject" class="form-select" name="schedule">
                         <option value="">-- Select Subject & Program --</option>
                         {% for sched in schedules %}
@@ -38,104 +53,169 @@
                         {% endfor %}
                     </select>
                 </form>
-            </div>
+        </div>
+        <div class="d-flex align-items-center d-print-none">
+                <form method="GET" action="{% url 'attendance_report_template' %}" id="dateForm">
+                        {% if selected_schedule_id %}
+                            <input type="hidden" name="schedule" value="{{ selected_schedule_id }}">
+                        {% endif %}
+                        <select id="date-range" class="form-select" name="date_range" {% if not date_ranges %}disabled{% endif %}>
+                            <option value="">-- Select Date Range --</option>
+                            {% for dr in date_ranges %}
+                                <option value="{{ dr.value }}" {% if dr.value == selected_date_range %}selected{% endif %}>{{ dr.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+        </div>
 
-            <div class="col-md-4">
-                <form method="GET" action="{% url 'student_attendance_records' %}" id="dateForm">
-                    {% if selected_schedule_id %}
-                        <input type="hidden" name="schedule" value="{{ selected_schedule_id }}">
+        <div class="col-md-4 d-flex align-items-end">
+                    {% if selected_schedule_id and not date_ranges %}
+                        <small class="text-muted">No attendance records found for this course</small>
                     {% endif %}
-                    <label for="date-range" class="form-label">Date Range:</label>
-                    <select id="date-range" class="form-select" name="date_range" {% if not date_ranges %}disabled{% endif %}>
-                        <option value="">-- Select Date Range --</option>
-                        {% for dr in date_ranges %}
-                            <option value="{{ dr.value }}" {% if dr.value == selected_date_range %}selected{% endif %}>{{ dr.label }}</option>
-                        {% endfor %}
-                    </select>
-                </form>
+                </div>
             </div>
-            
-            <div class="col-md-4 d-flex align-items-end">
-                {% if selected_schedule_id and not date_ranges %}
-                    <small class="text-muted">No attendance records found for this course</small>
+            <div>
+                {% if selected_schedule_id %}
+                <button class="btn btn-sm btn-success me-2" onclick="downloadDocx()">Download DOCX</button>
                 {% endif %}
             </div>
-        </div>
-
-        <!-- Faculty Info -->
-        <div class="mb-4">
-            <strong>Faculty In-Charge Name</strong><br>
-            Department: DED
-        </div>
-
-        <!-- Attendance Table -->
-        <div class="table-responsive">
-            <table class="table table-bordered text-center align-middle">
-                <thead class="table-light">
+       
+        
+        
+            <div id="attendance-doc" class="p-1">
+                
+                <!-- Header -->
+                <table class="table table-bordered border-dark w-100 align-middle">
                     <tr>
-                        <th rowspan="2">Student ID</th>
-                        <th rowspan="2">Name</th>
-                        <th rowspan="2">Sex (M/F)</th>
-                        <th rowspan="2">Subject</th>
-                        <th rowspan="2">Course</th>
-                        <th rowspan="2">Room</th>
-                        <th colspan="8">Date</th>
-                    </tr>
-                    <tr>
-                        {% for date in date_headers %}
-                            <th class="date-th">{{ date|date:"m/d" }}</th>
-                        {% endfor %}
-                        {% for i in num_empty_date_columns %}
-                            <th class="date-th"></th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in attendance_table %}
-                    <tr>
-                        <td>{{ row.student_id }}</td>
-                        <td>{{ row.name }}</td>
-                        <td>{{ row.sex }}</td>
-                        <td>{{ row.subject }}</td>
-                        <td>{{ row.course }}</td>
-                        <td>{{ row.room }}</td>
-                        {% for attendance in row.dates %}
-                        <td>
-                            {% if attendance.time_in and attendance.time_out %}
-                                {% if attendance.time_in|time:"H:i" == "00:00" or attendance.time_out|time:"H:i" == "00:00" %}
-                                    Absent
-                                {% else %}
-                                    {{ attendance.time_in|time:"H:i" }} - {{ attendance.time_out|time:"H:i" }}
-                                {% endif %}
-                            {% elif attendance.status %}
-                                {{ attendance.status }}
-                            {% endif %}
+                        <td class="text-center align-middle" style="width: 120px;">
+                            <div class="logo-box">LOGO</div>
                         </td>
-                        {% endfor %}
+                        <td class="text-center align-middle" colspan="2">
+                            <strong>TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES</strong><br>
+                            <strong>CAVITE CAMPUS</strong><br>
+                            Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, Philippines<br>
+                            Telefax: (046) 416-4920 <br> Email: <a href="mailto:cavite@tup.edu.ph">cavite@tup.edu.ph</a> | Website: <a href="https://www.tup.edu.ph">www.tup.edu.ph</a>
+                        </td>
                     </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                    <tr>
+                        <td class="text-center align-middle"><strong>DEPARTMENT</strong></td>
+                        <td class="text-center align-middle">
+                            <strong>CLASS ATTENDANCE MONITORING FORM</strong>
+                        </td>
+                        <td class="text-center align-middle" style="width: 100px;">
+                            <small>Page 1/1</small>
+                        </td>
+                    </tr>
+                </table>
 
-        <!-- Pagination -->
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <span>Showing {{ attendance_table|length }} result{{ attendance_table|length|pluralize }}</span>
-            <div>
-                <button class="btn btn-outline-secondary btn-sm">&lt;</button>
-                <button class="btn btn-secondary btn-sm">1</button>
-                <button class="btn btn-outline-secondary btn-sm">&gt;</button>
+                <!-- Class Details -->
+                <table class="table table-bordered border-dark mb-3">
+                    <tbody>
+                        <tr class="table-dark text-white">
+                            <td colspan="4" class="fw-bold">DETAILS OF CLASS</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUBJECT</strong></td>
+                            <td>{{ attendance_data.subject|default:"[Subject]" }}</td>
+                            <td><strong>FACULTY IN-CHARGE</strong></td>
+                            <td>{{ attendance_data.faculty_name|default:"[Faculty Name]" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>COURSE</strong></td>
+                            <td>{{ attendance_data.course|default:"[Course]" }}</td>
+                            <td><strong>BLDG. & ROOM NO.</strong></td>
+                            <td>{{ attendance_data.room|default:"[Room]" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>YEAR & SECTION</strong></td>
+                            <td>{{ attendance_data.year_section|default:"[Section]" }}</td>
+                            <td><strong>SCHEDULE (DAY & TIME)</strong></td>
+                            <td>{{ attendance_data.schedule|default:"[Schedule]" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Attendance Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered border-dark attendance-table">
+                        <thead class="table-secondary text-dark">
+                            <tr>
+                                <th rowspan="3">No.</th>
+                                <th rowspan="3">Name</th>
+                                <th rowspan="3">Sex (M/F)</th>
+                                <th colspan="8">Status</th>
+                            </tr>
+                            <tr>
+                                <th>Date</th><th>Date</th><th>Date</th><th>Date</th>
+                                <th>Date</th><th>Date</th><th>Date</th><th>Date</th>
+                            </tr>
+                            <tr class="bg-white">
+                                {% for date in date_headers %}
+                                    <th class="date-th">{{ date|date:"m/d" }}</th>
+                                {% endfor %}
+                                {% for i in num_empty_date_columns %}
+                                    <th class="date-th"></th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in attendance_table %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ row.name }}</td>
+                                <td>{{ row.sex }}</td>
+                                {% for attendance in row.dates %}
+                                <td>
+                                    {% if attendance.time_in and attendance.time_out %}
+                                        {% if attendance.time_in|time:"H:i" == "00:00" or attendance.time_out|time:"H:i" == "00:00" %}
+                                            Absent
+                                        {% else %}
+                                            {{ attendance.time_in|time:"H:i" }} - {{ attendance.time_out|time:"H:i" }}
+                                        {% endif %}
+                                    {% elif attendance.status %}
+                                        {{ attendance.status }}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                            
+                            <!-- Generate empty rows to fill up to 40 total -->
+                            {% with attendance_table|length as student_count %}
+                                {% with "0123456789012345678901234567890123456789"|make_list as numbers %}
+                                    {% for num in numbers %}
+                                        {% if forloop.counter0|add:student_count < 40 %}
+                                        <tr>
+                                            <td>{{ forloop.counter0|add:student_count|add:1 }}</td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endwith %}
+                            {% endwith %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-
-        <!-- Document Plotter -->
-        <div class="text-end mt-4">
-            <button class="btn btn-success custom-btn" onclick="window.location.href='http://127.0.0.1:8000/attendance_report_template';">Document Plotter</button>
+            
+            {% if students_list %}
+            <div class="mt-2 mb-3 d-print-none">
+                <small class="text-muted">Showing {{ students_list|length }} students</small>
+            </div>
+            {% endif %}
         </div>
     </div>
-</div>
 
-<!-- JavaScript for controlled form submission -->
+<!-- Rest of your JavaScript remains the same -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const subjectSelect = document.getElementById("subject");
@@ -144,29 +224,24 @@ document.addEventListener("DOMContentLoaded", function () {
     
     let submitTimeout;
 
-    // Handle subject selection with a small delay to prevent accidental triggers
     subjectSelect.addEventListener("change", function () {
         if (submitTimeout) {
             clearTimeout(submitTimeout);
         }
         
         if (this.value) {
-            // Small delay to prevent accidental submissions
             submitTimeout = setTimeout(() => {
                 document.getElementById("scheduleForm").submit();
             }, 100);
         }
     });
 
-    // Handle date range selection
     dateSelect.addEventListener("change", function () {
     if (this.value) {
-        // Just submit the form - let Django render the correct dates
         document.getElementById("dateForm").submit();
     }
     });
 
-    // Date formatting functions
     function formatDateMMDD(date) {
         const mm = (date.getMonth() + 1).toString().padStart(2, '0');
         const dd = date.getDate().toString().padStart(2, '0');
@@ -203,6 +278,39 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+    function exportToPDF() {
+        const element = document.getElementById('attendance-doc');
+        const opt = {
+            margin:       0.5,
+            filename:     'Class_Attendance_Form.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all'] }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    function downloadDocx() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedClassId = urlParams.get('schedule');
+        
+        if (!selectedClassId) {
+            alert('Please select a class first!');
+            return;
+        }
+
+        const downloadUrl = `/attendance/docx/${selectedClassId}/`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
 </body>
-{% endwith %}
 {% endblock %}

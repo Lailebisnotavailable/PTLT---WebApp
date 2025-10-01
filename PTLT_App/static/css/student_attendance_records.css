@@ -1,5 +1,5 @@
 body {
-    background-image: url('/static/image/PTLT_bg2.png');
+    background-image: url('/static/image/PTLT_bg3.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -121,4 +121,69 @@ h2 {
 
 #helpImage {
   border: 1px solid #dee2e6;
+}
+
+.logo-box {
+  border: 1px solid #000;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.attendance-table th, .attendance-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+@media print {
+    /* Reset body margins and add small side margins */
+    body {
+        margin: 0 15px !important;  /* Small margins on left and right */
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* Container adjustments */
+    .container {
+        max-width: none !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Document content spacing */
+    #attendance-doc {
+        position: static !important;  /* Remove fixed positioning */
+        margin: 1px 0 !important;   /* Small top/bottom margin */
+        padding: 1px !important;    /* Inner padding */
+        width: 100% !important;
+        background-color: #ffffff !important;
+        border: none !important;     /* Remove border for cleaner look */
+        z-index: auto !important;
+    }
+
+    /* Hide buttons, nav, pagination */
+    .d-print-none,
+    .no-print {
+        display: none !important;
+    }
+
+    /* Table adjustments for better printing */
+    .table {
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Ensure tables fit properly */
+    .table-responsive {
+        overflow: visible !important;
+    }
+
+    /* Page break control */
+    .attendance-table {
+        page-break-inside: avoid !important;
+    }
 }

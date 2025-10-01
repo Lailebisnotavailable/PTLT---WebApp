@@ -54,3 +54,28 @@ body {
     background-color: #a74545;
     color: white;
 }
+
+
+#togglePassword {
+    border-left: none;
+}
+
+#togglePassword:focus {
+    box-shadow: none;
+    border-color: #ced4da;
+}
+
+.input-group .form-control:focus {
+    border-right: 1px solid #86b7fe;
+}
+
+.input-group .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #ced4da;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    color: #495057;
+}
