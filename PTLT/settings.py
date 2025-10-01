@@ -166,7 +166,7 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",  # Your mobile app testing
     "http://127.0.0.1:8080",
-    "http://192.168.18.28", # table ip not laptop
+    "http://192.168.18.28:8000", # table ip not laptop
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
