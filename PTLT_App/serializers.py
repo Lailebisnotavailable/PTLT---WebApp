@@ -31,13 +31,19 @@ class MobileAccountSerializer(serializers.ModelSerializer):
         fields = ['user_id', 'email', 'first_name', 'last_name', 'role', 'sex', 'status']
         
 class MobileClassScheduleSerializer(serializers.ModelSerializer):
-    professor_user_id = serializers.CharField(source='professor.user_id', read_only=True)
+    professor_user_id = serializers.SerializerMethodField()
     
     class Meta:
         model = ClassSchedule
         fields = ['id', 'course_title', 'course_code', 'course_section', 'time_in', 'time_out', 
                  'days', 'grace_period', 'student_count', 'remote_device', 'room_assignment', 
                  'professor_user_id']
+    
+    def get_professor_user_id(self, obj):
+        """Return the professor's user_id string, not the FK id"""
+        if obj.professor:
+            return obj.professor.user_id  # Returns "220135211", not 5
+        return None
 class MobileAttendanceSerializer(serializers.ModelSerializer):
     # Override these fields to accept user_id strings instead of primary keys
     student = serializers.CharField()

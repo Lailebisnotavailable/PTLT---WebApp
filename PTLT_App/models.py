@@ -16,7 +16,7 @@ class CourseSection(models.Model):
 
 class Account(models.Model):
     user_id = models.CharField(max_length=50, unique=True, verbose_name="User ID")
-    email = models.EmailField(unique=True, verbose_name="Email Address")
+    email = models.EmailField(verbose_name="Email Address", blank = True, default = "")
     first_name = models.CharField(max_length=100, verbose_name="First Name")
     last_name = models.CharField(max_length=100, verbose_name="Last Name")
     role = models.CharField(

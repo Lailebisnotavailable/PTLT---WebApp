@@ -33,7 +33,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from datetime import datetime, date
 from functools import wraps
-
+import openpyxl
+import re
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -924,6 +925,198 @@ def import_class_schedule(request):
         "skipped": results["skipped"],
         "errors": results["errors"],
     })
+#try pdf import
+@require_http_methods(["POST"])
+def import_class_from_excel(request):
+    if 'excel_file' not in request.FILES:
+        return JsonResponse({'status': 'error', 'message': 'No Excel file provided'}, status=400)
+    
+    excel_file = request.FILES['excel_file']
+    
+    try:
+        # Load the workbook
+        wb = openpyxl.load_workbook(excel_file, data_only=True)
+        
+        # Initialize data containers
+        schedule_data = {}
+        all_students = []
+        
+        # Process each sheet to find schedule and student information
+        for sheet_name in wb.sheetnames:
+            sheet = wb[sheet_name]
+            
+            # Check if this sheet contains schedule information
+            first_cell = sheet.cell(1, 1).value
+            if first_cell and 'Schedule ID' in str(first_cell):
+                # Parse the schedule information from the merged cell
+                text = str(first_cell)
+                
+                # Extract Schedule ID
+                schedule_id_match = re.search(r'Schedule ID\s*:\s*([A-Z0-9]+)', text)
+                if schedule_id_match and 'schedule_id' not in schedule_data:
+                    schedule_data['schedule_id'] = schedule_id_match.group(1).strip()
+                
+                # Extract Subject (Course Code - Course Title)
+                subject_match = re.search(r'Subject\s*:\s*([A-Z0-9-]+)\s*-\s*(.+?)(?:\s{2,}|Venue)', text)
+                if subject_match and 'course_code' not in schedule_data:
+                    schedule_data['course_code'] = subject_match.group(1).strip()
+                    schedule_data['course_title'] = subject_match.group(2).strip()
+                
+                # Extract Day/Time
+                day_time_match = re.search(r'Day/Time\s*:\s*([MTWRFSU])\s+(\d{1,2}:\d{2}[AP]M)-(\d{1,2}:\d{2}[AP]M)', text)
+                if day_time_match and 'day' not in schedule_data:
+                    day_map = {
+                        'M': 'Monday', 'T': 'Tuesday', 'W': 'Wednesday',
+                        'R': 'Thursday', 'F': 'Friday', 'S': 'Saturday', 'U': 'Sunday'
+                    }
+                    schedule_data['day'] = day_map.get(day_time_match.group(1), 'Monday')
+                    
+                    time_in_str = day_time_match.group(2)
+                    time_out_str = day_time_match.group(3)
+                    
+                    schedule_data['time_in'] = datetime.strptime(time_in_str, '%I:%M%p').time()
+                    schedule_data['time_out'] = datetime.strptime(time_out_str, '%I:%M%p').time()
+                
+                # Extract Course/Section
+                section_match = re.search(r'Course/Section\s*:\s*(.+?)(?:\s{2,}|$)', text)
+                if section_match and 'section_name' not in schedule_data:
+                    section_str = section_match.group(1).strip()
+                    # Handle format like "BET-COET-C-BET-COET-C-4A-C"
+                    parts = section_str.split('-')
+                    if len(parts) >= 3:
+                        # Extract course and section
+                        # For "BET-COET-C-BET-COET-C-4A-C", we want "BET-COET-C" and "4A-C"
+                        mid_point = len(parts) // 2
+                        schedule_data['course_name'] = '-'.join(parts[:mid_point])
+                        schedule_data['section_name'] = '-'.join(parts[-2:])
+            
+            # Check if this sheet contains student information
+            elif sheet.max_row > 1:
+                # Check if first row has student headers
+                row1_values = [str(sheet.cell(1, col).value or '') for col in range(1, min(6, sheet.max_column + 1))]
+                if 'Student No.' in ' '.join(row1_values):
+                    # This is a student list sheet
+                    for row_idx in range(2, sheet.max_row + 1):
+                        # Get student data from columns
+                        student_no_cell = sheet.cell(row_idx, 2).value  # Column B
+                        name_cell = sheet.cell(row_idx, 3).value  # Column C
+                        
+                        if not student_no_cell or not name_cell:
+                            continue
+                        
+                        # Skip if it's a total row
+                        if 'Total' in str(student_no_cell):
+                            break
+                        
+                        # Extract ID (TUPC-22-0352 → 220352)
+                        student_no = str(student_no_cell).strip()
+                        match = re.match(r'TUPC-(\d{2})-(\d{4})', student_no)
+                        if not match:
+                            continue
+                        
+                        short_id = match.group(1) + match.group(2)  # e.g., "220352"
+                        
+                        # Parse name (LASTNAME, FIRSTNAME MIDDLENAME)
+                        name = str(name_cell).strip()
+                        name_parts = name.split(',')
+                        
+                        if len(name_parts) >= 2:
+                            last_name = name_parts[0].strip().title()
+                            first_name_parts = name_parts[1].strip().split()
+                            first_name = first_name_parts[0].title() if first_name_parts else ''
+                            
+                            all_students.append({
+                                'user_id': short_id,
+                                'first_name': first_name,
+                                'last_name': last_name
+                            })
+        
+        # Validate we got the required schedule data
+        required_fields = ['course_code', 'course_title', 'day', 'time_in', 'time_out', 'course_name', 'section_name']
+        missing_fields = [f for f in required_fields if f not in schedule_data]
+        
+        if missing_fields:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Could not parse schedule information. Missing: {", ".join(missing_fields)}'
+            }, status=400)
+        
+        if not all_students:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Could not find any students in the Excel file'
+            }, status=400)
+        
+        # Create or get CourseSection
+        course_section, created = CourseSection.objects.get_or_create(
+            course_name=schedule_data['course_name'],
+            section_name=schedule_data['section_name']
+        )
+        
+        # Create ClassSchedule
+        class_schedule = ClassSchedule.objects.create(
+            course_code=schedule_data['course_code'],
+            course_title=schedule_data['course_title'],
+            time_in=schedule_data['time_in'],
+            time_out=schedule_data['time_out'],
+            days=schedule_data['day'],
+            course_section=course_section,
+            professor=None,
+            student_count=0,
+            grace_period=15,
+            remote_device='',
+            room_assignment='-'
+        )
+        
+        # Create student accounts
+        created_students = 0
+        skipped_students = 0
+        
+        for student_info in all_students:
+            if not Account.objects.filter(user_id=student_info['user_id']).exists():
+                Account.objects.create(
+                    user_id=student_info['user_id'],
+                    email='',  # Empty - will be filled via mobile app
+                    first_name=student_info['first_name'],
+                    last_name=student_info['last_name'],
+                    role='Student',
+                    password='00000',
+                    sex='',
+                    status='Pending',
+                    course_section=course_section,
+                    fingerprint_template=None
+                )
+                created_students += 1
+            else:
+                skipped_students += 1
+        
+        # Update student count
+        class_schedule.student_count = len(all_students)
+        class_schedule.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Successfully imported class schedule',
+            'details': {
+                'course_code': schedule_data['course_code'],
+                'course_title': schedule_data['course_title'],
+                'course_section': course_section.course_section,
+                'day': schedule_data['day'],
+                'time': f"{schedule_data['time_in']} - {schedule_data['time_out']}",
+                'students_created': created_students,
+                'students_skipped': skipped_students,
+                'total_students': len(all_students)
+            }
+        })
+        
+    except Exception as e:
+        print(f"Error importing Excel: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Failed to parse Excel: {str(e)}'
+        }, status=500)
 
 @admin_required
 def class_management(request):
@@ -1429,7 +1622,7 @@ def trigger_mobile_sync(request):
 
 class ClassScheduleViewSet(viewsets.ModelViewSet):
     queryset = ClassSchedule.objects.all()
-    serializer_class = ClassScheduleSerializer
+    serializer_class = MobileClassScheduleSerializer
     
     def get_permissions(self):
         """Allow read without auth, require auth for write operations"""

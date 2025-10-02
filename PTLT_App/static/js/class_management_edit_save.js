@@ -363,4 +363,58 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+        // Import Class Excel
+    const importExcelBtn = document.getElementById("importClassExcelBtn");
+    const excelFileInput = document.getElementById("excelFileInput");
+
+    if (importExcelBtn && excelFileInput) {
+        importExcelBtn.addEventListener("click", function () {
+            excelFileInput.click();
+        });
+
+        excelFileInput.addEventListener("change", async function (event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("excel_file", file);
+
+            importExcelBtn.disabled = true;
+            importExcelBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing...';
+
+            try {
+                const response = await fetch("/import_class_excel/", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCSRFToken()
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    let message = `Successfully imported!\n\n`;
+                    message += `Course: ${data.details.course_code} - ${data.details.course_title}\n`;
+                    message += `Section: ${data.details.course_section}\n`;
+                    message += `Schedule: ${data.details.day} ${data.details.time}\n\n`;
+                    message += `Students created: ${data.details.students_created}\n`;
+                    message += `Students skipped (already exist): ${data.details.students_skipped}\n`;
+                    message += `Total students: ${data.details.total_students}`;
+                    
+                    alert(message);
+                    location.reload();
+                } else {
+                    alert(`Import failed:\n${data.message}`);
+                }
+            } catch (err) {
+                console.error('Excel import error:', err);
+                alert(`Error importing Excel: ${err.message}`);
+            } finally {
+                importExcelBtn.disabled = false;
+                importExcelBtn.innerHTML = 'Import from Excel';
+                excelFileInput.value = '';
+            }
+        });
+    }
 }); // End of DOMContentLoaded
