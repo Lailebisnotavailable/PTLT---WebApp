@@ -1254,7 +1254,9 @@ def update_class_schedule(request, pk):
             cls.time_in = data.get("time_in")
             cls.time_out = data.get("time_out")
             cls.days = data.get("day")
+            cls.remote_device = data.get("remote_device") 
             cls.save()
+            
 
             return JsonResponse({"status": "success"})
         except Exception as e:
@@ -1817,3 +1819,48 @@ def mobile_auth(request):
         })
     
     return Response({'error': 'Invalid device credentials'}, status=401)
+@csrf_exempt
+@require_http_methods(["PUT", "PATCH", "POST"])
+def mobile_update_account(request, user_id):
+    """Mobile-specific account update endpoint - allows devices to complete pending accounts"""
+    try:
+        # Optional: Basic device authentication check
+        device_id = request.headers.get('X-Device-ID')
+        
+        # Get the account
+        try:
+            account = Account.objects.get(user_id=user_id)
+        except Account.DoesNotExist:
+            return JsonResponse({'error': 'Account not found'}, status=404)
+        
+        # Parse update data
+        data = json.loads(request.body)
+        
+        # Update only allowed fields (email, sex, fingerprint, status)
+        if 'email' in data and data['email']:
+            account.email = data['email']
+        if 'sex' in data and data['sex']:
+            account.sex = data['sex']
+        if 'fingerprint_template' in data:
+            account.fingerprint_template = data['fingerprint_template']
+        if 'status' in data:
+            account.status = data['status']
+            
+        account.save()
+        
+        # Return updated account
+        return JsonResponse({
+            'user_id': account.user_id,
+            'email': account.email,
+            'first_name': account.first_name,
+            'last_name': account.last_name,
+            'role': account.role,
+            'password': None,
+            'sex': account.sex,
+            'status': account.status,
+            'course_section': account.course_section.id if account.course_section else None,
+            'fingerprint_template': account.fingerprint_template
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

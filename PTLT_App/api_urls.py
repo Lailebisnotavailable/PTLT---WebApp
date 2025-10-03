@@ -11,4 +11,5 @@ urlpatterns = [
     path('auth/login/', views.mobile_login, name='mobile_login'),
     path('auth/mobile/', views.mobile_auth, name='mobile_auth'),
     path('mobile-account-sync/', views.mobile_account_sync, name='api_mobile_account_sync'),
+    path('mobile-update-account/<str:user_id>/', views.mobile_update_account, name='mobile_update_account'), 
 ] + router.urls

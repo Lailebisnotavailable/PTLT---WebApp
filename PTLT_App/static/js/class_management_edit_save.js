@@ -107,6 +107,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const currentTimeIn = timeInCell.textContent.trim();
                 const currentTimeOut = timeOutCell.textContent.trim();
                 const currentDay = dayCell.textContent.trim();
+                const remoteDeviceCell = row.querySelector('.remote_device');  // ADD THIS
+                const currentDevice = remoteDeviceCell.textContent.trim();
 
                 let dropdownHTML = `<select class="form-select form-select-sm">`;
 
@@ -131,6 +133,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${d}</option>`
                     ).join('')}
                 </select>`;
+                
+                remoteDeviceCell.innerHTML = `<select class="form-select form-select-sm">
+                    <option value="1" ${currentDevice === '1' ? 'selected' : ''}>1</option>
+                    <option value="2" ${currentDevice === '2' ? 'selected' : ''}>2</option>
+                    <option value="3" ${currentDevice === '3' ? 'selected' : ''}>3</option>
+                </select>`;
 
                 button.textContent = "Save";
                 button.classList.replace("btn-outline-primary", "btn-outline-success");
@@ -139,6 +147,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const selectedTimeIn = timeInCell.querySelector('input').value;
                 const selectedTimeOut = timeOutCell.querySelector('input').value;
                 const selectedDay = dayCell.querySelector('select').value;
+                const remoteDeviceCell = row.querySelector('.remote_device');         // ADD THIS
+                const selectedDevice = remoteDeviceCell.querySelector('select').value;
 
                 if (selectedTimeOut <= selectedTimeIn) {
                     alert("Time Out must be later than Time In.");
@@ -157,7 +167,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         professor_name: selectedProf,
                         time_in: selectedTimeIn,
                         time_out: selectedTimeOut,
-                        day: selectedDay
+                        day: selectedDay,
+                        remote_device: selectedDevice
                     })
                 });
 
@@ -166,6 +177,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     timeInCell.textContent = selectedTimeIn;
                     timeOutCell.textContent = selectedTimeOut;
                     dayCell.textContent = selectedDay;
+                    remoteDeviceCell.textContent = selectedDevice; 
 
                     button.textContent = "Edit";
                     button.classList.replace("btn-outline-success", "btn-outline-primary");
