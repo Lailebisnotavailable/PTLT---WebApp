@@ -26,6 +26,18 @@
         <!-- Filter Bar -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="mb-0 text-decoration-underline">Account Management</h3>
+            <!-- Simple Sync Reminder -->
+            {% if update_count > 0 %}
+            <div class="alert alert-warning alert-dismissible fade show d-flex justify-content-between align-items-center mt-3" role="alert">
+                <div>
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Sync Required:</strong> {{ update_count }} account{{ update_count|pluralize }} updated. Please sync to mobile app.
+                </div>
+                <div>
+                    <a href="?mark_updates_read=true" class="btn btn-sm btn-outline-dark me-2">Dismiss</a>
+                </div>
+            </div>
+            {% endif %}
 
             <div class="d-flex flex-column align-items-end">
                 <label for="search-input" class="form-label mb-1 fw-semibold">Search User</label>

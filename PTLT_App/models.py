@@ -145,6 +145,7 @@ class AccountUploadNotification(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     account_name = models.CharField(max_length=200)
     is_read = models.BooleanField(default=False)
+    notification_type = models.CharField(max_length=50, default='upload')
     
     class Meta:
         ordering = ['-uploaded_at']

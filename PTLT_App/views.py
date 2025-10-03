@@ -784,6 +784,16 @@ def account_management(request):
             Q(first_name__icontains=search_query) | Q(last_name__icontains=search_query)
         )
 
+    update_notifications = AccountUploadNotification.objects.filter(is_read=False, notification_type='update')
+    update_count = update_notifications.count()
+    recent_updates = update_notifications[:5]
+    
+    # Mark updates as read if requested
+    if request.GET.get('mark_updates_read') == 'true':
+        AccountUploadNotification.objects.filter(is_read=False, notification_type='update').update(is_read=True)
+        messages.success(request, f'Marked {update_count} notifications as read.')
+        return redirect('account_management')
+    
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('partials/account_table_body.html', {'accounts': accounts})
         return JsonResponse({'html': html})
@@ -1848,6 +1858,12 @@ def mobile_update_account(request, user_id):
             
         account.save()
         
+        if was_pending and account.status == 'Active':
+            AccountUploadNotification.objects.create(
+                account_name=f"{account.first_name} {account.last_name}",
+                notification_type='update'
+            )
+            
         # Return updated account
         return JsonResponse({
             'user_id': account.user_id,
