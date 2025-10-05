@@ -71,6 +71,11 @@ from io import BytesIO
 import os
 from django.conf import settings
 
+from django.core.mail import EmailMessage
+from django.conf import settings
+import random
+from datetime import datetime, timedelta
+
 # Custom authentication decorators
 def admin_required(view_func):
     @wraps(view_func)
@@ -123,9 +128,8 @@ PERIODS = [
 @transaction.atomic 
 def login_view(request):
     
-    # Check if any accounts exist
+    # Check if any accounts exist - keep your existing default account creation
     if not Account.objects.exists():
-        # Create default admin and instructor accounts
         default_accounts = [
             {
                 'user_id': '000000',
@@ -133,7 +137,7 @@ def login_view(request):
                 'first_name': 'Super Admin',
                 'last_name': 'Account 0',
                 'role': 'Admin',
-                'password': 'admin',
+                'password': None,  # No password needed
                 'sex': 'Other',
                 'status': 'Active'
             },
@@ -143,7 +147,7 @@ def login_view(request):
                 'first_name': 'Dummy',
                 'last_name': 'Account 1',
                 'role': 'Instructor',
-                'password': 'instructor',
+                'password': None,
                 'sex': 'Other',
                 'status': 'Active'
             },
@@ -153,7 +157,7 @@ def login_view(request):
                 'first_name': 'Dummy',
                 'last_name': 'Account 2',
                 'role': 'Instructor',
-                'password': 'instructor',
+                'password': None,
                 'sex': 'Other',
                 'status': 'Active'
             },
@@ -163,7 +167,7 @@ def login_view(request):
                 'first_name': 'Dummy',
                 'last_name': 'Account 3',
                 'role': 'Instructor',
-                'password': 'instructor',
+                'password': None,
                 'sex': 'Other',
                 'status': 'Active'
             },
@@ -173,92 +177,231 @@ def login_view(request):
                 'first_name': 'Dummy',
                 'last_name': 'Account 4',
                 'role': 'Instructor',
-                'password': 'instructor',
+                'password': None,
                 'sex': 'Other',
                 'status': 'Active'
             }
         ]
 
         for acc in default_accounts:
-            # Create Django built-in User
+            # Create Django User for session management
             user = User.objects.create_user(
                 username=acc['user_id'],
                 email=acc['email'],
-                password=acc['password'],
+                password=User.objects.make_random_password(),  # Random password (won't be used)
                 first_name=acc['first_name'],
                 last_name=acc['last_name']
             )
 
-            # Save also to your custom Account model (no password needed here)
+            # Create Account entry
             Account.objects.create(
                 user_id=acc['user_id'],
                 email=acc['email'],
                 first_name=acc['first_name'],
                 last_name=acc['last_name'],
                 role=acc['role'],
-                password=None,  # Let Django User handle passwords
+                password=None,
                 sex=acc['sex'],
                 status=acc['status'],
                 course_section=None
             )
     
     if request.method == 'POST':
-        #VVVV get the email and password inputted by the user
         email = request.POST.get('email')
-        password = request.POST.get('password')
 
         try:
-            # First check if this is a temporary password login
-            account = Account.objects.get(email=email)
+            # Check if account exists and is Instructor or Admin
+            account = Account.objects.get(email=email, role__in=['Instructor', 'Admin'])
             
-            # Check if user has Django User account
-            try:
-                user_obj = User.objects.get(email=email)
-                # Try normal authentication first
-                user = authenticate(request, username=user_obj.username, password=password)
-                if user is not None:
-                    # Check if password is the temporary "00000" or "admin"
-                    if password == "000000" or password == "admin":
-                        # Store user info in session for password change
-                        request.session['temp_user_id'] = account.user_id
-                        request.session['temp_email'] = email
-                        messages.info(request, "You must change your password before continuing.")
-                        return redirect('force_password_change')
-                    
-                    # Normal login
-                    login(request, user)
-                    request.session['user_id'] = account.user_id
-                    request.session['role'] = account.role
+            # Check if account is active
+            if account.status != 'Active':
+                messages.error(request, 'Your account is not active. Please contact administrator.')
+                return redirect('login')
+            
+            # Generate 6-digit OTP
+            otp = random.randint(100000, 999999)
+            
+            # Store OTP in session with timestamp
+            request.session['login_otp'] = otp
+            request.session['login_email'] = email
+            request.session['otp_timestamp'] = datetime.now().isoformat()
+            
+            # Design the email
+            email_subject = "PTLT - Login OTP Verification"
+            email_body = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif;">
+                    <h2 style="color: #661e1e;">PTLT Login Verification</h2>
+                    <p>Hello {account.first_name},</p>
+                    <p>You have requested to log in to the PTLT system. Please use the OTP below:</p>
+                    <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
+                        <h1 style="color: #661e1e; font-size: 36px; margin: 0; letter-spacing: 5px;">{otp}</h1>
+                    </div>
+                    <p style="color: #666;">This OTP is valid for <strong>5 minutes</strong>. Please do not share it with anyone.</p>
+                    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                    <p style="font-size: 12px; color: #999;">
+                        If you did not attempt to log in, please ignore this email or contact the administrator.
+                    </p>
+                </body>
+            </html>
+            """
 
-                    # Redirect based on role
-                    if account.role == 'Admin':
-                        return redirect('account_management')
-                    elif account.role == 'Instructor':
-                        return redirect('schedule')
-                    else:
-                        messages.error(request, "Unknown user role.")
-                        return redirect('login')
+            # Send OTP email
+            try:
+                email_message = EmailMessage(
+                    email_subject,
+                    email_body,
+                    settings.EMAIL_HOST_USER,
+                    [email],
+                )
+                email_message.content_subtype = 'html'
+                email_message.send()
                 
-            except User.DoesNotExist:
-                # No Django User exists, but Account exists with temp password
-                if password == "00000":
-                    # Store account info for password setup
-                    request.session['temp_user_id'] = account.user_id
-                    request.session['temp_email'] = email
-                    messages.info(request, "Please set up your password to continue.")
-                    return redirect('force_password_change')
-                else:
-                    messages.error(request, "Account not fully set up. Please contact administrator.")
-                    return redirect('login')
-            
-            messages.error(request, "Invalid credentials")
-            return redirect('login')
+                messages.success(request, f'OTP has been sent to {email}. Please check your inbox.')
+                return redirect('verify_login_otp')
+                
+            except Exception as e:
+                messages.error(request, 'Failed to send OTP. Please try again later.')
+                return redirect('login')
 
         except Account.DoesNotExist:
-            messages.error(request, "No account found with that email.")
+            messages.error(request, 'No account found with that email, or you do not have access to this system.')
             return redirect('login')
         
     return render(request, 'login.html')
+
+
+# NEW VIEW: OTP Verification for Login
+def verify_login_otp(request):
+    # Check if user came from login page with OTP
+    if 'login_otp' not in request.session or 'login_email' not in request.session:
+        messages.error(request, "Session expired. Please request a new OTP.")
+        return redirect('login')
+    
+    if request.method == 'POST':
+        user_otp = request.POST.get('otp')
+        stored_otp = request.session.get('login_otp')
+        email = request.session.get('login_email')
+        otp_timestamp = request.session.get('otp_timestamp')
+        
+        # Check OTP expiration (5 minutes)
+        otp_time = datetime.fromisoformat(otp_timestamp)
+        current_time = datetime.now()
+        time_diff = (current_time - otp_time).total_seconds() / 60
+        
+        if time_diff > 5:
+            # OTP expired
+            del request.session['login_otp']
+            del request.session['login_email']
+            del request.session['otp_timestamp']
+            messages.error(request, "OTP has expired. Please request a new one.")
+            return redirect('login')
+        
+        # Validate OTP
+        if str(stored_otp) == user_otp:
+            try:
+                # Get the account
+                account = Account.objects.get(email=email)
+                
+                # Get or create Django User for session
+                try:
+                    user_obj = User.objects.get(email=email)
+                except User.DoesNotExist:
+                    # Create Django User if doesn't exist
+                    user_obj = User.objects.create_user(
+                        username=account.user_id,
+                        email=account.email,
+                        password=User.objects.make_random_password(),
+                        first_name=account.first_name,
+                        last_name=account.last_name
+                    )
+                
+                # Log the user in (backend bypasses password check)
+                from django.contrib.auth import login as auth_login
+                auth_login(request, user_obj, backend='django.contrib.auth.backends.ModelBackend')
+                
+                # Set session variables
+                request.session['user_id'] = account.user_id
+                request.session['role'] = account.role
+                
+                # Clear OTP data from session
+                del request.session['login_otp']
+                del request.session['login_email']
+                del request.session['otp_timestamp']
+                
+                messages.success(request, f"Welcome back, {account.first_name}!")
+                
+                # Redirect based on role
+                if account.role == 'Admin':
+                    return redirect('account_management')
+                elif account.role == 'Instructor':
+                    return redirect('schedule')
+                else:
+                    messages.error(request, "Unknown user role.")
+                    return redirect('login')
+                    
+            except Account.DoesNotExist:
+                messages.error(request, "Account not found.")
+                return redirect('login')
+        else:
+            # Invalid OTP - but don't clear session, allow retry
+            messages.error(request, "Invalid OTP. Please try again.")
+            return render(request, 'verify_login_otp.html', {'email': email})
+    
+    # GET request - show OTP entry form
+    email = request.session.get('login_email')
+    return render(request, 'verify_login_otp.html', {'email': email})
+
+
+# NEW VIEW: Resend OTP
+def resend_login_otp(request):
+    if 'login_email' not in request.session:
+        messages.error(request, "Session expired. Please start login process again.")
+        return redirect('login')
+    
+    email = request.session.get('login_email')
+    
+    try:
+        account = Account.objects.get(email=email, role__in=['Instructor', 'Admin'])
+        
+        # Generate new OTP
+        otp = random.randint(100000, 999999)
+        
+        # Update session
+        request.session['login_otp'] = otp
+        request.session['otp_timestamp'] = datetime.now().isoformat()
+        
+        # Send email
+        email_subject = "PTLT - New Login OTP"
+        email_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif;">
+                <h2 style="color: #661e1e;">PTLT Login Verification</h2>
+                <p>Hello {account.first_name},</p>
+                <p>You have requested a new OTP. Please use the code below:</p>
+                <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
+                    <h1 style="color: #661e1e; font-size: 36px; margin: 0; letter-spacing: 5px;">{otp}</h1>
+                </div>
+                <p style="color: #666;">This OTP is valid for <strong>5 minutes</strong>.</p>
+            </body>
+        </html>
+        """
+        
+        email_message = EmailMessage(
+            email_subject,
+            email_body,
+            settings.EMAIL_HOST_USER,
+            [email],
+        )
+        email_message.content_subtype = 'html'
+        email_message.send()
+        
+        messages.success(request, 'A new OTP has been sent to your email.')
+        return redirect('verify_login_otp')
+        
+    except Exception as e:
+        messages.error(request, 'Failed to resend OTP. Please try again.')
+        return redirect('verify_login_otp')
 
 
 def force_password_change(request):
